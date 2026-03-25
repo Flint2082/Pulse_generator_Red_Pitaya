@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # === SETTINGS ===
-PROJECT_DIR="$HOME/work/CASPER_repos/qcm_red_pitaya"
-TARGET_DIR="$PROJECT_DIR/model_composer/qcm_rp/myproj/myproj.runs/impl_1"
+PROJECT_DIR="$HOME/work/CASPER_repos/Pulse_generator"
+TARGET_DIR="$PROJECT_DIR/model_composer/pulse_generator/myproj/myproj.runs/impl_1"
 REMOTE_USER="root"
 REMOTE_PATH="/root"
 BITFILE="top.bit"
 BIFFILE="top.bif"
 OUTPUT_BIN="top.bit.bin"
-VENV_DIR="$PROJECT_DIR/cfpga_venv"
+VENV_DIR="$PROJECT_DIR/.venv"
 PYTHON_SCRIPT="$PROJECT_DIR/src/interactive.py"
 
 # === SCRIPT START ===
@@ -45,4 +45,4 @@ echo "Activating CASPERFPGA venv"
 
 echo "Starting interactive session"
 
-.venv-rp/bin/python3 "$PYTHON_SCRIPT" $1 || { echo "Failed to start Python script: $PYTHON_SCRIPT"; exit 1; }
+"$VENV_DIR"/bin/python3 "$PYTHON_SCRIPT" $1 || { echo "Failed to start Python script: $PYTHON_SCRIPT"; exit 1; }
