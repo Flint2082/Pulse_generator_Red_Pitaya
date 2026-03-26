@@ -4,12 +4,12 @@ import csv
 
 class PulseGenInterface:
     def __init__(self, RP_IP):
-        # base_dir = os.path.dirname(os.path.abspath(__file__))
-        # directory = os.path.join(base_dir, "..", "model_composer", "qcm_rp", "outputs")
-        # newest_file = max(
-        #     (os.path.join(directory, f) for f in os.listdir(directory)),
-        #     key=os.path.getmtime
-        # )
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        directory = os.path.join(base_dir, "..", "model_composer", "qcm_rp", "outputs")
+        newest_file = max(
+            (os.path.join(directory, f) for f in os.listdir(directory)),
+            key=os.path.getmtime
+        )
  
         # Constants
         self.FPGA_CLOCK_FREQ = 125e6  # 125 MHz
@@ -18,16 +18,16 @@ class PulseGenInterface:
         
         
 
-        # self.fpga = casperfpga.CasperFpga(RP_IP)
-        # print("CasperFpga connected to red pitaya")
+        self.fpga = casperfpga.CasperFpga(RP_IP)
+        print("CasperFpga connected to red pitaya")
 
-        # print("Newest file", newest_file)
+        print("Newest file", newest_file)
 
-        # try:
-        #     self.fpga.upload_to_ram_and_program(newest_file)
-        # except Exception as e:
-        #     print(f"Failed to upload FPGA program: {e}")
-        #     raise
+        try:
+            self.fpga.upload_to_ram_and_program(newest_file)
+        except Exception as e:
+            print(f"Failed to upload FPGA program: {e}")
+            raise
 
     
     def reset(self):
