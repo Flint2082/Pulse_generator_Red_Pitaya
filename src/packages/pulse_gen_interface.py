@@ -1,11 +1,11 @@
-# import casperfpga
+import casperfpga
 import os
 import csv
 
 class PulseGenInterface:
     def __init__(self, RP_IP):
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        directory = os.path.join(base_dir, "..", "model_composer", "qcm_rp", "outputs")
+        directory = os.path.join(base_dir, "..", "..", "model_composer", "pulse_generator", "outputs")
         newest_file = max(
             (os.path.join(directory, f) for f in os.listdir(directory)),
             key=os.path.getmtime
@@ -31,9 +31,9 @@ class PulseGenInterface:
 
     
     def reset(self):
-        # self.fpga.write_int("reset", 1)
+        self.fpga.write_int("reset", 1)
         print("Resetting pulse generator")
-        # self.fpga.write_int("reset", 0)
+        self.fpga.write_int("reset", 0)
     
     def time_to_cycles(self, time_sec):
         return int(time_sec * self.FPGA_CLOCK_FREQ)    
@@ -48,7 +48,7 @@ class PulseGenInterface:
             raise ValueError(f"Period time must be less than {self.cycles_to_time(2**32 - 1)} seconds")
         period_cycles = self.time_to_cycles(period_time)
         print(f"Setting period time to {period_time} seconds ({period_cycles} cycles)")
-        # self.fpga.write_int("period", period_cycles)
+        self.fpga.write_int("period", period_cycles)
     
     def write_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs
@@ -62,8 +62,8 @@ class PulseGenInterface:
             raise ValueError("Output index cannot be 0, as the lowest output is 1")
         
         # Write to FPGA registers
-        # self.fpga.write_int(f"out_{output_idx}_start_{pulse_idx}", start)
-        # self.fpga.write_int(f"out_{output_idx}_stop_{pulse_idx}", stop)
+        self.fpga.write_int(f"out_{output_idx}_start_{pulse_idx}", start)
+        self.fpga.write_int(f"out_{output_idx}_stop_{pulse_idx}", stop)
         
         print(f"Writing pulse to output {output_idx}, pulse {pulse_idx}: start={start}, stop={stop}")  
     
