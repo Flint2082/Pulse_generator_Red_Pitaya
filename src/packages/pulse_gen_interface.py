@@ -41,14 +41,13 @@ class PulseGenInterface:
     def cycles_to_time(self, cycles):
         return cycles / self.FPGA_CLOCK_FREQ
     
-    def set_period_time(self, period_time):
-        if period_time <= 0:
-            raise ValueError("Period time must be greater than 0")
-        if period_time > self.cycles_to_time(2**32 - 1):
-            raise ValueError(f"Period time must be less than {self.cycles_to_time(2**32 - 1)} seconds")
-        period_cycles = self.time_to_cycles(period_time)
-        print(f"Setting period time to {period_time} seconds ({period_cycles} cycles)")
-        self.fpga.write_int("period", period_cycles)
+    def set_period_length(self, period_length_cycles):
+        if period_length_cycles <= 0:
+            raise ValueError("Period length must be greater than 0")
+        if period_length_cycles > 2**32 - 1:
+            raise ValueError(f"Period length must be less than {2**32 - 1}")
+        print(f"Setting period length to {self.cycles_to_time(period_length_cycles)} seconds ({period_length_cycles} cycles)")
+        self.fpga.write_int("period", period_length_cycles)
     
     def write_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs
