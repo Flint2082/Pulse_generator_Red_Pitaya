@@ -90,19 +90,20 @@ class PulseGenInterface:
     # where out_idx 0 corresponds to the max counter value (i.e. the period) 
     def get_timing_from_file(self, file_path):
         if not os.path.isfile(file_path):
-            raise ValueError(f"File {file_path} does not exist") 
-        
-        timing_data = {i: {"pulses": []} for i in range(self.NUM_OUTPUTS + 1)}
-       
+            raise ValueError(f"File {file_path} does not exist")
+
+        # Create list of empty lists (one per output and one for the period)
+        timing_data = [[] for _ in range(self.NUM_OUTPUTS + 1)]
 
         with open(file_path, "r") as csvfile:
             reader = csv.DictReader(csvfile, delimiter=",", skipinitialspace=True, strict=True)
-            
+
             for row in reader:
                 output_idx = int(row["out_idx"])
                 start_ticks = int(row["start_ticks"])
                 stop_ticks = int(row["stop_ticks"])
-                timing_data[output_idx]["pulses"].append((start_ticks, stop_ticks))
+
+                timing_data[output_idx].append((start_ticks, stop_ticks))
 
         return timing_data
 
