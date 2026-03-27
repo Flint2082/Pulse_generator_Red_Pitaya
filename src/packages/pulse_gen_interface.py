@@ -102,6 +102,9 @@ class PulseGenInterface:
             reader = csv.DictReader(csvfile, delimiter=",", skipinitialspace=True, strict=True)
 
             for row in reader:
+                if not row["out_idx"] or not row["start_ticks"] or not row["stop_ticks"]:
+                    print(f"Skipping invalid row: {row}")
+                    continue
                 output_idx = int(row["out_idx"])
                 start_ticks = int(row["start_ticks"])
                 stop_ticks = int(row["stop_ticks"])
