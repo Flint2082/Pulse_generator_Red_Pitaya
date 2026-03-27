@@ -72,9 +72,7 @@ class PulseGenInterface:
     
     
     def write_pulse_trains(self, pulse_trains):
-        for item in pulse_trains:
-            output_idx = item["out_idx"]
-            pulse_train = item["pulses"]
+        for output_idx, pulse_train in enumerate(pulse_trains):
             self.write_pulse_train(output_idx, pulse_train)
 
 
