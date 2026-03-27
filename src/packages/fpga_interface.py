@@ -34,7 +34,8 @@ class FPGAInterface:
                         data = line.split("\t")
                         self.register_map[data[1].strip()] = int(data[2].strip(), 0)
                     elif line.strip() and line.startswith("?quit"):
-                        print("Successfully finished parsing")
+                        if debug:
+                            print("Successfully finished parsing")
                         break
             return True
         except Exception as e:
@@ -42,21 +43,27 @@ class FPGAInterface:
             return False
             
             
-    # def write_int(self, offset, value):
-    #     if self.mem is None:
-    #         raise RuntimeError("Memory not mapped")
-    #     if offset < 0 or offset + 4 > self.map_size:
-    #         raise ValueError("Offset out of bounds")
-        
-        # self.mem[offset:offset+4] = struct.pack("<I", value)
         
     def write_register(self, register_name, value):
         if register_name not in self.register_map:
             raise ValueError(f"Register {register_name} not found in register map")
         mem_loc = self.register_map[register_name]
-        self.mem[mem_loc:mem_loc+4] = struct.pack("<I", value)
+        relative_loc = mem_loc - self.base_addr
+        self.mem[relative_loc:relative_loc+4] = struct.pack("<I", value)
+        
+        # checking that the value was written correctly
+        read_value = self.read_register(register_name)
+        if read_value != value:
+            raise ValueError(f"Value {value} was not written correctly to register {register_name}, read back {read_value}")
+        else:
+            return True
 
-
+    def read_register(self, register_name):
+        if register_name not in self.register_map:
+            raise ValueError(f"Register {register_name} not found in register map")
+        mem_loc = self.register_map[register_name]
+        relative_loc = mem_loc - self.base_addr
+        return struct.unpack("<I", self.mem[relative_loc:relative_loc+4])[0]
     
     
     # # Write 42 to offset 0xC8
