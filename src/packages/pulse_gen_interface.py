@@ -1,4 +1,4 @@
-from fpga_interface import FPGAInterface
+from packages.fpga_interface import FPGAInterface
 import os
 import csv
 
