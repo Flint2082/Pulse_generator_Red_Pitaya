@@ -60,7 +60,7 @@ class PulseGenInterface:
     
     def write_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs
-        if stop <= start:
+        if stop < start:
             raise ValueError("Stop time must be greater than start time")
         if pulse_idx >= self.MAX_PULSES_PER_OUTPUT:
             raise ValueError(f"Pulse index must be less than {self.MAX_PULSES_PER_OUTPUT}")
@@ -115,3 +115,13 @@ class PulseGenInterface:
                 print(f"Output {output_idx}:")
                 for pulse in timing["pulses"]:
                     print(f"  Start: {pulse[0]} ticks, Stop: {pulse[1]} ticks")
+                    
+    def clear_output(self, output_idx):
+        for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
+            self.write_pulse(output_idx, pulse_idx, 0, 0)
+        print(f"Cleared output {output_idx}")
+    
+    def clear_all_outputs(self):
+        for output_idx in range(1, self.NUM_OUTPUTS + 1):
+            self.clear_output(output_idx)
+        print("Cleared all outputs")
