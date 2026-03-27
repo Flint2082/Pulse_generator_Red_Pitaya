@@ -82,7 +82,10 @@ class PulseGenInterface:
     
     def write_pulse_trains(self, pulse_trains):
         for output_idx, pulse_train in enumerate(pulse_trains):
-            self.write_pulse_train(output_idx, pulse_train)
+            if output_idx == 0:
+                self.set_period(pulse_train[0][1])  # Set period using stop time of first pulse
+            else:
+                self.write_pulse_train(output_idx, pulse_train)
 
 
     # load pulse trains from a file with format:
