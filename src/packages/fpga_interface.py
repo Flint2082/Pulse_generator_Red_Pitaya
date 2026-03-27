@@ -11,10 +11,7 @@ class FPGAInterface:
     def __init__(self, base_addr=BASE_ADDR, map_size=MAP_SIZE):
         self.base_addr = base_addr
         self.map_size = map_size
-        self.mem = None
-       
 
-    def map_memory(self):
         with open("/dev/mem", "r+b") as f:
             self.mem = mmap.mmap(
                 f.fileno(),
@@ -42,7 +39,9 @@ class FPGAInterface:
             print(f"Error loading register map: {e}")
             return False
             
-            
+    def show_register_map(self):
+        for reg_name, reg_addr in self.register_map.items():
+            print(f"{reg_name}: {hex(reg_addr)}")        
         
     def write_register(self, register_name, value):
         if register_name not in self.register_map:
