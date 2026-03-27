@@ -65,11 +65,3 @@ class FPGAInterface:
         return struct.unpack("<I", self.mem[relative_loc:relative_loc+4])[0]
     
     
-    # # Write 42 to offset 0xC8
-    # mem[OFFSET:OFFSET+4] = struct.pack("<I", 42)
-
-    # # Read back
-    # value = struct.unpack("<I", mem[OFFSET:OFFSET+4])[0]
-    # print(value)
-
-    # mem.close()

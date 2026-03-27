@@ -3,7 +3,7 @@ import os
 import csv
 
 class PulseGenInterface:
-    def __init__(self, RP_IP):
+    def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         directory = os.path.join(base_dir, "..", "..", "model_composer", "pulse_generator", "outputs")
         newest_file = max(
@@ -26,10 +26,16 @@ class PulseGenInterface:
             raise
 
     def start(self):
+        if(self.fpga.read_register("counter_en") == 1):
+            print("Pulse generator is already running")
+            return
         self.fpga.write_register("counter_en", 1)
         print("Starting pulse generator")
     
     def stop(self):
+        if(self.fpga.read_register("counter_en") == 0):
+            print("Pulse generator is already stopped")
+            return
         self.fpga.write_register("counter_en", 0)
         print("Stopping pulse generator")
     
@@ -38,19 +44,19 @@ class PulseGenInterface:
         print("Resetting pulse generator")
         self.fpga.write_register("reset", 0)
     
-    def time_to_cycles(self, time_sec):
+    def time_to_ticks(self, time_sec):
         return int(time_sec * self.FPGA_CLOCK_FREQ)    
     
-    def cycles_to_time(self, cycles):
-        return cycles / self.FPGA_CLOCK_FREQ
+    def ticks_to_time(self, ticks):
+        return ticks / self.FPGA_CLOCK_FREQ
     
-    def set_period_length(self, period_length_cycles):
-        if period_length_cycles <= 0:
+    def set_period(self, period_length_ticks):
+        if period_length_ticks <= 0:
             raise ValueError("Period length must be greater than 0")
-        if period_length_cycles > 2**32 - 1:
+        if period_length_ticks > 2**32 - 1:
             raise ValueError(f"Period length must be less than {2**32 - 1}")
-        print(f"Setting period length to {self.cycles_to_time(period_length_cycles)} seconds ({period_length_cycles} cycles)")
-        self.fpga.write_register("period", period_length_cycles)
+        print(f"Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
+        self.fpga.write_register("period", period_length_ticks)
     
     def write_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs
@@ -58,8 +64,8 @@ class PulseGenInterface:
             raise ValueError("Stop time must be greater than start time")
         if pulse_idx >= self.MAX_PULSES_PER_OUTPUT:
             raise ValueError(f"Pulse index must be less than {self.MAX_PULSES_PER_OUTPUT}")
-        if output_idx >= self.NUM_OUTPUTS + 1:
-            raise ValueError(f"Output index must be less than {self.NUM_OUTPUTS + 1}")
+        if output_idx > self.NUM_OUTPUTS:
+            raise ValueError(f"Output index must be no greater than {self.NUM_OUTPUTS}")
         if output_idx == 0:
             raise ValueError("Output index cannot be 0, as the lowest output is 1")
         
@@ -80,7 +86,7 @@ class PulseGenInterface:
 
 
     # load pulse trains from a file with format:
-    # output_idx,start_cycles,stop_cycles
+    # output_idx,start_ticks,stop_ticks
     # where out_idx 0 corresponds to the max counter value (i.e. the period) 
     def get_timing_from_file(self, file_path):
         if not os.path.isfile(file_path):
@@ -94,9 +100,9 @@ class PulseGenInterface:
             
             for row in reader:
                 output_idx = int(row["out_idx"])
-                start_cycles = int(row["start_cycles"])
-                stop_cycles = int(row["stop_cycles"])
-                timing_data[output_idx]["pulses"].append((start_cycles, stop_cycles))
+                start_ticks = int(row["start_ticks"])
+                stop_ticks = int(row["stop_ticks"])
+                timing_data[output_idx]["pulses"].append((start_ticks, stop_ticks))
 
         return timing_data
 
@@ -108,4 +114,4 @@ class PulseGenInterface:
             else:
                 print(f"Output {output_idx}:")
                 for pulse in timing["pulses"]:
-                    print(f"  Start: {pulse[0]} cycles, Stop: {pulse[1]} cycles")
+                    print(f"  Start: {pulse[0]} ticks, Stop: {pulse[1]} ticks")
