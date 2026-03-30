@@ -25,6 +25,20 @@ class PulseGenInterface:
             print(f"Failed to upload FPGA program: {e}")
             raise
 
+    def help(self):
+        print("Available methods:")
+        print("  start() - Start the pulse generator")
+        print("  stop() - Stop the pulse generator")
+        print("  reset() - Reset the counters and clear outputs")
+        print(" ")
+        print("  set_period(period_length_ticks) - Set the period length in ticks (must be > 0 and < 2^32)")
+        print("  write_pulse(output_idx, pulse_idx, start, stop) - Write a single pulse to the specified output and pulse index (output_idx starts at 1, pulse_idx starts at 0 and must be less than 8, start and stop are in ticks)")
+        print("  write_pulse_train(output_idx, pulse_train) - Write a list of pulses to the specified output (output_idx starts at 1, pulse_train is a list of (start, stop) tuples)")
+        print("  write_pulse_trains(pulse_trains) - Write pulse trains to all outputs. takes output of get_pulse_data_from_file() as input")
+        print("  get_pulse_data_from_file(file_path) - Load pulse data from a CSV file with columns out_idx, start_ticks, stop_ticks (out_idx 0 corresponds to the period)")
+        print("  print_pulse_data(pulse_data) - Print pulse data loaded from a file in a human-readable format")
+        
+
     def start(self):
         if(self.fpga.read_register("counter_en") == 1):
             print("Pulse generator is already running")
@@ -40,6 +54,7 @@ class PulseGenInterface:
         print("Stopping pulse generator")
     
     def reset(self):
+        self.clear_all_outputs()
         self.fpga.write_register("reset", 1)
         print("Resetting pulse generator")
         self.fpga.write_register("reset", 0)
@@ -91,7 +106,7 @@ class PulseGenInterface:
     # load pulse trains from a file with format:
     # output_idx,start_ticks,stop_ticks
     # where out_idx 0 corresponds to the max counter value (i.e. the period) 
-    def get_timing_from_file(self, file_path):
+    def get_pulse_data_from_file(self, file_path):
         if not os.path.isfile(file_path):
             raise ValueError(f"File {file_path} does not exist")
 
@@ -103,7 +118,6 @@ class PulseGenInterface:
 
             for row in reader:
                 if not row["out_idx"] or not row["start_ticks"] or not row["stop_ticks"]:
-                    print(f"Skipping invalid row: {row}")
                     continue
                 output_idx = int(row["out_idx"])
                 start_ticks = int(row["start_ticks"])
