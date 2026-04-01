@@ -53,6 +53,12 @@ class PulseGenInterface:
         self.fpga.write_register("counter_en", 0)
         print("Stopping pulse generator")
     
+    def get_status(self):
+        self.fpga.read_register("counter_en")
+        status = "running" if self.fpga.read_register("counter_en") == 1 else "stopped"
+        print(f"Pulse generator is currently {status}")
+        return status
+    
     def reset(self):
         self.clear_all_outputs()
         self.fpga.write_register("reset", 1)

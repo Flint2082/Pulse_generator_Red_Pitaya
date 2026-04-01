@@ -19,3 +19,6 @@ def stop():
     controller.stop()
     return {"status": "stopped"}
 
+@app.get("/status")
+def status():
+    return controller.get_status()
