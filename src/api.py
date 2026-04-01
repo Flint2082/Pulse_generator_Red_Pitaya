@@ -4,10 +4,7 @@ from packages.pulse_gen_interface import PulseGenInterface
 import casperfpga
 
 # --- init hardware ---
-fpga = casperfpga.CasperFpga("localhost")  # or 127.0.0.1
-controller = PulseGenInterface(fpga)
-
-
+controller = PulseGenInterface()
 app = FastAPI()
 
 # --- API endpoints ---
