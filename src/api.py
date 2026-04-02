@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from packages.pulse_gen_interface import PulseGenInterface
 
-import casperfpga
 
 # --- init hardware ---
 controller = PulseGenInterface()
