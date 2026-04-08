@@ -21,6 +21,7 @@ class PulseGenInterface:
         try:
             self.fpga = FPGAInterface()
             self.fpga.load_register_map(newest_file)
+            self.fpga.test_fpga_interface("counter_en")
         except Exception as e:
             print(f"Failed to upload FPGA program: {e}")
             raise
@@ -38,7 +39,6 @@ class PulseGenInterface:
         print("  get_pulse_data_from_file(file_path) - Load pulse data from a CSV file with columns out_idx, start_ticks, stop_ticks (out_idx 0 corresponds to the period)")
         print("  print_pulse_data(pulse_data) - Print pulse data loaded from a file in a human-readable format")
         
-
     def start(self):
         if(self.fpga.read_register("counter_en") == 1):
             print("Pulse generator is already running")
@@ -54,6 +54,7 @@ class PulseGenInterface:
         print("Stopping pulse generator")
     
     def get_status(self):
+        
         self.fpga.read_register("counter_en")
         status = "running" if self.fpga.read_register("counter_en") == 1 else "stopped"
         print(f"Pulse generator is currently {status}")

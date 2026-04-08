@@ -58,6 +58,14 @@ async def status():
     status = app.state.pulser.get_status()
     return {"status": status, "clients": len(clients)}
 
+@app.get("/system_info")
+async def system_info():
+    return {
+        "fpga_clock_freq": app.state.pulser.FPGA_CLOCK_FREQ,
+        "num_outputs": app.state.pulser.NUM_OUTPUTS,
+        "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
+    }
+
 @app.get("/pulse_config")
 async def get_pulse_config():
     pulse_data = app.state.pulser.get_pulse_data()

@@ -19,6 +19,17 @@ class FPGAInterface:
                 offset=self.base_addr
             )
 
+    def test_fpga_interface(self, test_register):
+        try:
+            # Attempt to read from the first register (assuming it's a known register)
+            test_value = self.read_register(test_register)  # Replace with an actual register name from your map
+            self.write_register(test_register, test_value+1)  # Try writing back a modified value
+            self.write_register(test_register, test_value)  # Write the original value back
+            return True
+        except Exception as e:
+            print(f"Test failed: {e}")
+            return False
+    
     # Parse the .fpg file to get register names and offsets, and store in a dictionary
     def load_register_map(self, register_map_dir, debug=False):
         try:
