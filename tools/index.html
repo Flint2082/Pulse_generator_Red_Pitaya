@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Live Data</h2>
+<pre id="output"></pre>
+
+<script>
+const ws = new WebSocket("ws://rp-f0f587.local:8000/stream");
+
+ws.onmessage = (event) => {
+    document.getElementById("output").textContent = event.data;
+};
+
+// keep connection alive
+setInterval(() => ws.send("ping"), 1000);
+</script>
+
+
+</body>
+</html>

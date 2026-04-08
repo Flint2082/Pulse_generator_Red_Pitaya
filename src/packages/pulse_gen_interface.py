@@ -79,7 +79,7 @@ class PulseGenInterface:
         print(f"Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
         self.fpga.write_register("period", period_length_ticks)
     
-    def write_pulse(self, output_idx, pulse_idx, start, stop):
+    def set_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs
         if stop < start:
             raise ValueError("Stop time must be greater than start time")
@@ -96,17 +96,17 @@ class PulseGenInterface:
         
         print(f"Writing pulse to output {output_idx}, pulse {pulse_idx}: start={start}, stop={stop}")  
     
-    def write_pulse_train(self, output_idx, pulse_train):
+    def set_pulse_train(self, output_idx, pulse_train):
         for pulse_idx, pulse in enumerate(pulse_train):
-            self.write_pulse(output_idx, pulse_idx, pulse[0], pulse[1])
+            self.set_pulse(output_idx, pulse_idx, pulse[0], pulse[1])
     
     
-    def write_pulse_trains(self, pulse_trains):
+    def set_pulse_trains(self, pulse_trains):
         for output_idx, pulse_train in enumerate(pulse_trains):
             if output_idx == 0:
                 self.set_period(pulse_train[0][1])  # Set period using stop time of first pulse
             else:
-                self.write_pulse_train(output_idx, pulse_train)
+                self.set_pulse_train(output_idx, pulse_train)
 
 
     # load pulse trains from a file with format:
@@ -145,7 +145,7 @@ class PulseGenInterface:
                     
     def clear_output(self, output_idx):
         for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
-            self.write_pulse(output_idx, pulse_idx, 0, 0)
+            self.set_pulse(output_idx, pulse_idx, 0, 0)
         print(f"Cleared output {output_idx}")
     
     def clear_all_outputs(self):
