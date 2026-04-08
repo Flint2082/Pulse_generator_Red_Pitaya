@@ -12,10 +12,12 @@ pulser = PulseGenInterface()
 # Shared state
 clients = set()
 
-# # Start background task
-# @app.on_event("startup")
-# async def startup_event():
-#     asyncio.create_task(data_generator())
+# Start background task
+@app.on_event("startup")
+async def startup_event():
+    print("Starting server...")
+    while True:
+        await asyncio.sleep(0.1) 
 
 
 # ----------------------
