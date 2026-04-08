@@ -3,11 +3,11 @@ import random
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
-from packages.pulse_gen_interface import PulseGeneratorInterface
+from packages.pulse_gen_interface import PulseGenInterface 
 
 app = FastAPI()
 
-pulser = PulseGeneratorInterface()
+pulser = PulseGenInterface()
 
 # Shared state
 clients = set()
