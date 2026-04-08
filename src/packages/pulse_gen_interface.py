@@ -137,13 +137,17 @@ class PulseGenInterface:
     def get_pulse_data(self):
         pulse_data = {}
         for output_idx in range(self.NUM_OUTPUTS + 1):
-            for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
-                start = self.fpga.read_register(f"out_{output_idx}_start_{pulse_idx}")
-                stop = self.fpga.read_register(f"out_{output_idx}_stop_{pulse_idx}")
-                if start != 0 or stop != 0:
-                    if output_idx not in pulse_data:
-                        pulse_data[output_idx] = []
-                    pulse_data[output_idx].append((start, stop))
+            if output_idx == 0:
+                period = self.fpga.read_register("period")
+                pulse_data[0] = [(0, period)]
+            else:
+                for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
+                    start = self.fpga.read_register(f"out_{output_idx}_start_{pulse_idx}")
+                    stop = self.fpga.read_register(f"out_{output_idx}_stop_{pulse_idx}")
+                    if start != 0 or stop != 0:
+                        if output_idx not in pulse_data:
+                            pulse_data[output_idx] = []
+                        pulse_data[output_idx].append((start, stop))
             
         return pulse_data
 

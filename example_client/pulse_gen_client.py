@@ -1,12 +1,14 @@
 import csv
 import os
-
 import requests
 
-from server import set_pulse, stop
 
 
 class RedPitayaClient:
+    NUM_OUTPUTS = 3
+    MAX_PULSES_PER_OUTPUT = 8
+    
+    
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
 
@@ -43,8 +45,8 @@ class RedPitayaClient:
     def stop(self):
         return self._post("/stop")
 
-    def clear(self):
-        return self._post("/clear")
+    def reset(self):
+        return self._post("/reset")
 
     def set_period(self, period_length_ticks: int):
         return self._post(
