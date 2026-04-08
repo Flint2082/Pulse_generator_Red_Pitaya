@@ -134,15 +134,19 @@ class PulseGenInterface:
         return timing_data
 
 
-    def print_timing(self, timing_data):
-        for output_idx, timing in timing_data.items():
-            if output_idx == 0:
-                print(f"Output {output_idx} (period): {timing['pulses']}")
-            else:
-                print(f"Output {output_idx}:")
-                for pulse in timing["pulses"]:
-                    print(f"  Start: {pulse[0]} ticks, Stop: {pulse[1]} ticks")
-                    
+    def get_pulse_data(self):
+        pulse_data = {}
+        for output_idx in range(self.NUM_OUTPUTS + 1):
+            for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
+                start = self.fpga.read_register(f"out_{output_idx}_start_{pulse_idx}")
+                stop = self.fpga.read_register(f"out_{output_idx}_stop_{pulse_idx}")
+                if start != 0 or stop != 0:
+                    if output_idx not in pulse_data:
+                        pulse_data[output_idx] = []
+                    pulse_data[output_idx].append((start, stop))
+            
+        return pulse_data
+
     def clear_output(self, output_idx):
         for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
             self.set_pulse(output_idx, pulse_idx, 0, 0)

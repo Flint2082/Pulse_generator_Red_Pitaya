@@ -23,6 +23,10 @@ class PulseConfig(BaseModel):
     pulse_idx: int
     start: int
     stop: int
+
+class PulseTrainConfig(BaseModel):
+    output_idx: int
+    pulse_train: list[tuple[int, int]]
     
     
 # ----------------------
@@ -47,6 +51,20 @@ app = FastAPI(lifespan=lifespan)
 # REST API
 # ----------------------
 
+# GET endpoints
+
+@app.get("/status")
+async def status():
+    status = app.state.pulser.get_status()
+    return {"status": status, "clients": len(clients)}
+
+@app.get("/pulse_config")
+async def get_pulse_config():
+    pulse_data = app.state.pulser.get_pulse_data()
+    return {"pulse_data": pulse_data}
+
+# POST endpoints
+
 @app.post("/start")
 async def start():
     app.state.pulser.start()
@@ -59,15 +77,11 @@ async def stop():
     return JSONResponse({"status": "stopped"})
 
 
-@app.get("/status")
-async def status():
-    status = app.state.pulser.get_status()
-    return {"status": status, "clients": len(clients)}
-
-@app.post("/clear")
-async def clear():
+@app.post("/reset")
+async def reset():
     app.state.pulser.clear_all_outputs()
-    return JSONResponse({"status": "outputs cleared"})
+    return JSONResponse({"status": "pulse generator reset"})
+
 
 @app.post("/set_period")
 async def set_period(config: periodConfig):
@@ -84,3 +98,12 @@ async def set_pulse(config: PulseConfig):
         return JSONResponse({"status": "pulse config updated", "received": config.model_dump()})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/set_pulse_train")
+async def set_pulse_train(config: PulseTrainConfig):
+    try:
+        app.state.pulser.set_pulse_train(config.output_idx, config.pulse_train)
+        return JSONResponse({"status": "pulse train config updated", "received": config.model_dump()})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
