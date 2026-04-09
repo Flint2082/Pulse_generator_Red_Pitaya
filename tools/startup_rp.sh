@@ -11,12 +11,6 @@ cd "$SCRIPT_DIR"
 # Echo the current directory
 echo "Current directory: $(pwd)"
 
-# Echo the provided red pitaya address
-if [ -z "$1" ]; then
-    echo "Usage: $0 <red_pitaya_ip_address>"
-    exit 1
-fi
-
 # Check if the top.bit.bin exists
 if [ ! -f "$HOME/top.bit.bin" ]; then
     echo "Error: top.bit.bin not found"
