@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 import random
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -10,14 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from packages.pulse_gen_interface import PulseGenInterface 
 
 
-# Shared state
-clients = set()
+WEB_DIR = Path(__file__).parent.parent / "web"
 
 # ----------------------
 # Datastructures
 # ----------------------
 
-class periodConfig(BaseModel):
+class PeriodConfig(BaseModel):
     period_length_ticks: int
 
 class PulseConfig(BaseModel):
@@ -65,12 +65,12 @@ app.add_middleware(
 
 # GET endpoints
 
-@app.get("/status")
+@app.get("/api/status")
 async def status():
     status = app.state.pulser.get_status()
     return {"status": status, "clients": len(clients)}
 
-@app.get("/system_info")
+@app.get("/api/system_info")
 async def system_info():
     return {
         "fpga_clock_freq": app.state.pulser.FPGA_CLOCK_FREQ,
@@ -78,40 +78,40 @@ async def system_info():
         "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
     }
 
-@app.get("/pulse_config")
+@app.get("/api/pulse_config")
 async def get_pulse_config():
     pulse_data = app.state.pulser.get_pulse_data()
     return {"pulse_data": pulse_data}
 
 # POST endpoints
 
-@app.post("/start")
+@app.post("/api/start")
 async def start():
     app.state.pulser.start()
     return JSONResponse({"status": "started"})
 
 
-@app.post("/stop")
+@app.post("/api/stop")
 async def stop():
     app.state.pulser.stop()
     return JSONResponse({"status": "stopped"})
 
 
-@app.post("/reset")
+@app.post("/api/reset")
 async def reset():
     app.state.pulser.clear_all_outputs()
     return JSONResponse({"status": "pulse generator reset"})
 
 
-@app.post("/set_period")
-async def set_period(config: periodConfig):
+@app.post("/api/set_period")
+async def set_period(config: PeriodConfig):
     try:
         app.state.pulser.set_period(config.period_length_ticks)
         return JSONResponse({"status": "period updated", "received": config.model_dump()})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/set_pulse")
+@app.post("/api/set_pulse")
 async def set_pulse(config: PulseConfig):
     try:
         app.state.pulser.set_pulse(config.output_idx, config.pulse_idx, config.start, config.stop)
@@ -119,7 +119,7 @@ async def set_pulse(config: PulseConfig):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/set_pulse_train")
+@app.post("/api/set_pulse_train")
 async def set_pulse_train(config: PulseTrainConfig):
     try:
         app.state.pulser.set_pulse_train(config.output_idx, config.pulse_train)
@@ -128,4 +128,4 @@ async def set_pulse_train(config: PulseTrainConfig):
         raise HTTPException(status_code=500, detail=str(e))
     
     
-app.mount("/", StaticFiles(directory="../web", html=True), name="web")
+app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

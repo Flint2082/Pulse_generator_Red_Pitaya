@@ -68,7 +68,7 @@
     <script>
         async function fetchSysInfo() {
             try {
-                const systemInfoRes = await fetch('http://rp-f0f587.local:8000/system_info');
+                const systemInfoRes = await fetch('/api/system_info');
                 const systemInfo = await systemInfoRes.json();
                 return systemInfo;  
             } catch (err) {
@@ -79,7 +79,7 @@
 
         async function fetchPulseData() {
             try {
-                const response = await fetch('http://rp-f0f587.local:8000/pulse_config');
+                const response = await fetch('/api/pulse_config');
                 const data = await response.json();
                 return data.pulse_data;  // assume {0: [[start, stop], ...], 1: [...]} format
             } catch (err) {
@@ -141,29 +141,29 @@
 
 // GET: system info
 async function getSystemInfo() {
-    const res = await fetch(`/system_info`);
+    const res = await fetch(`/api/system_info`);
     const data = await res.json();
     document.getElementById("systemInfo").textContent = JSON.stringify(data, null, 2);
 }
 
 // GET: status
 async function getStatus() {
-    const res = await fetch(`/status`);
+    const res = await fetch(`/api/status`);
     const data = await res.json();
     document.getElementById("statusInfo").textContent = JSON.stringify(data, null, 2);
 }
 
 // POST: start, stop, reset
 async function startPulser() {
-    await fetch(`/start`, { method: "POST" });
+    await fetch(`/api/start`, { method: "POST" });
     getStatus();
 }
 async function stopPulser() {
-    await fetch(`/stop`, { method: "POST" });
+    await fetch(`/api/stop`, { method: "POST" });
     getStatus();
 }
 async function resetPulser() {
-    await fetch(`/reset`, { method: "POST" });
+    await fetch(`/api/reset`, { method: "POST" });
     getStatus();
 }
 
@@ -171,7 +171,7 @@ async function resetPulser() {
 async function setPeriod() {
     const ticks = parseInt(document.getElementById("periodTicks").value);
     if (isNaN(ticks)) return alert("Enter a valid number for ticks");
-    await fetch(`/set_period`, {
+    await fetch(`/api/set_period`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ period_length_ticks: ticks })
@@ -186,7 +186,7 @@ async function setPulse() {
     const start = parseInt(document.getElementById("startTick").value);
     const stop = parseInt(document.getElementById("stopTick").value);
     if ([output_idx, pulse_idx, start, stop].some(isNaN)) return alert("Fill all fields correctly");
-    await fetch(`/set_pulse`, {
+    await fetch(`/api/set_pulse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })
@@ -199,7 +199,7 @@ async function setPulseTrain() {
     const output_idx = parseInt(document.getElementById("outputIdx").value);
     const pulse_train = JSON.parse(document.getElementById("pulseTrain").value);
     if (isNaN(output_idx)) return alert("Enter a valid output index");
-    await fetch(`/set_pulse_train`, {
+    await fetch(`/api/set_pulse_train`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ output_idx, pulse_train })
