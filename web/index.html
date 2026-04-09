@@ -138,33 +138,32 @@
 </div>
 
 <script>
-const API_BASE = "http://rp-f0f587.local:8000";
 
 // GET: system info
 async function getSystemInfo() {
-    const res = await fetch(`${API_BASE}/system_info`);
+    const res = await fetch(`/system_info`);
     const data = await res.json();
     document.getElementById("systemInfo").textContent = JSON.stringify(data, null, 2);
 }
 
 // GET: status
 async function getStatus() {
-    const res = await fetch(`${API_BASE}/status`);
+    const res = await fetch(`/status`);
     const data = await res.json();
     document.getElementById("statusInfo").textContent = JSON.stringify(data, null, 2);
 }
 
 // POST: start, stop, reset
 async function startPulser() {
-    await fetch(`${API_BASE}/start`, { method: "POST" });
+    await fetch(`/start`, { method: "POST" });
     getStatus();
 }
 async function stopPulser() {
-    await fetch(`${API_BASE}/stop`, { method: "POST" });
+    await fetch(`/stop`, { method: "POST" });
     getStatus();
 }
 async function resetPulser() {
-    await fetch(`${API_BASE}/reset`, { method: "POST" });
+    await fetch(`/reset`, { method: "POST" });
     getStatus();
 }
 
@@ -172,7 +171,7 @@ async function resetPulser() {
 async function setPeriod() {
     const ticks = parseInt(document.getElementById("periodTicks").value);
     if (isNaN(ticks)) return alert("Enter a valid number for ticks");
-    await fetch(`${API_BASE}/set_period`, {
+    await fetch(`/set_period`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ period_length_ticks: ticks })
@@ -187,7 +186,7 @@ async function setPulse() {
     const start = parseInt(document.getElementById("startTick").value);
     const stop = parseInt(document.getElementById("stopTick").value);
     if ([output_idx, pulse_idx, start, stop].some(isNaN)) return alert("Fill all fields correctly");
-    await fetch(`${API_BASE}/set_pulse`, {
+    await fetch(`/set_pulse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })
@@ -200,7 +199,7 @@ async function setPulseTrain() {
     const output_idx = parseInt(document.getElementById("outputIdx").value);
     const pulse_train = JSON.parse(document.getElementById("pulseTrain").value);
     if (isNaN(output_idx)) return alert("Enter a valid output index");
-    await fetch(`${API_BASE}/set_pulse_train`, {
+    await fetch(`/set_pulse_train`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ output_idx, pulse_train })

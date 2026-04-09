@@ -1,7 +1,8 @@
 import asyncio
 from contextlib import asynccontextmanager
 import random
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect 
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,6 +56,8 @@ app.add_middleware(
     allow_methods=["*"],  # allow GET, POST, OPTIONS, etc.
     allow_headers=["*"],  # allow any headers
 )
+
+app.mount("/", StaticFiles(directory="../web", html=True), name="web")
 
 # ----------------------
 # REST API
