@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
     yield  # Control is transferred to the request handlers while the server is running
     
     # Shutdown code
+    app.state.pulser.stop()
     app.state.pulser.cleanup()
     print("Server shutting down, pulse generator cleaned up")
 

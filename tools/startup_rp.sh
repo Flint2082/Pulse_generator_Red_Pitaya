@@ -26,13 +26,3 @@ fi
 # Load FPGA bitstream 
 fpgautil -b $HOME/top.bit.bin
 
-
-# Check if client exists
-if [ ! -f "$SCRIPT_DIR/../src/main.py" ]; then
-    echo "Error: client file main.py not found"
-    exit 1
-fi
-
-# Start the client
-echo "Starting client side..."
-$SCRIPT_DIR/../.venv-rp/bin/python3 $SCRIPT_DIR/../src/main.py "$1"
