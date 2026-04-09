@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Pitaya Pulse Generator GUI</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #e0e0e0; }
+    h1 { color: #333; }
+    button { margin: 5px; width: 120px; padding: 8px 15px; }
+    input { margin: 5px; width: 80px; }
+    .section { border: 3px solid #7a7a7a; padding: 15px; margin-bottom: 20px; background-color: #d4d4d4; }
+    .subsection { display:inline-block; border: 2px solid #7a7a7a; padding: 10px; margin-top: 10px; background-color: #c0c0c0; }
+    pre { background-color: #eee; padding: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Red Pitaya Pulse Generator GUI</h1>
+
+
+<!-- System Info -->
+<div class="section"; display:inline-block; style="width: 40%;">
+    <h2>System Info</h2>
+    <button onclick="getSystemInfo()">Refresh</button>
+    <pre id="systemInfo">Click "Refresh" to load system info...</pre>
+</div>
+
+<!-- Status -->
+<div class="section"; display:inline-block; style="width: 40%;">
+    <h2>Status</h2>
+    <button onclick="getStatus()">Refresh</button>
+    <pre id="statusInfo">Click "Refresh" to see status...</pre>
+</div>
+
+
+<!-- Control -->
+<div class="section">
+    <h2>Control</h2>
+    <button onclick="startPulser()">Start</button>
+    <button onclick="stopPulser()">Stop</button>
+    <button onclick="resetPulser()">Reset</button>
+</div>
+
+<!-- Set Period -->
+<div class="section">
+    <h2>Set Period</h2>
+    <input type="number" id="periodTicks" placeholder="Ticks">
+    <button onclick="setPeriod()">Set Period</button>
+</div>
+
+<!-- Set Pulse -->
+<div class="section">
+    <h2>Set Pulse</h2>
+    <input type="number" id="outputIdx" placeholder="Output idx">
+    <input type="number" id="pulseIdx" placeholder="Pulse idx">
+    <input type="number" id="startTick" placeholder="Start">
+    <input type="number" id="stopTick" placeholder="Stop">
+    <button onclick="setPulse()">Set Pulse</button>
+</div>
+
+<!-- Visualize Pulse Train -->
+<div class="section">
+    <h2>Pulse Train Visualization</h2>
+    <div id="pulsePlot" style="width:100%;height:500px;"></div>
+
+    <script>
+        async function fetchSysInfo() {
+            try {
+                const systemInfoRes = await fetch('http://rp-f0f587.local:8000/system_info');
+                const systemInfo = await systemInfoRes.json();
+                return systemInfo;  
+            } catch (err) {
+                console.error('Error fetching system info:', err);
+                return {};
+            }
+        }
+
+        async function fetchPulseData() {
+            try {
+                const response = await fetch('http://rp-f0f587.local:8000/pulse_config');
+                const data = await response.json();
+                return data.pulse_data;  // assume {0: [[start, stop], ...], 1: [...]} format
+            } catch (err) {
+                console.error('Error fetching pulse data:', err);
+                return {};
+            }
+        }
+
+        function plotPulseTrain(pulseData, clockSpeedHz) {
+            const traces = [];
+            const period = (pulseData[0][0][1] - pulseData[0][0][0]) * (1/clockSpeedHz); // assuming period is defined by the first entry of output 0
+
+            for (const [outputIdx, pulses] of Object.entries(pulseData)) {
+                if (Number(outputIdx) === 0){ 
+                    // nr 0 is only the period, not a pulse train
+                    continue;
+                }
+                const x = [];
+                const y = [];
+                pulses.forEach(([start, stop]) => {
+                    // Each pulse is represented by a horizontal line
+                    x.push(start* (1/clockSpeedHz), stop* (1/clockSpeedHz), null); // null creates a break between segments
+                    y.push(Number(outputIdx), Number(outputIdx), null);
+                });
+
+                traces.push({
+                    x: x,
+                    y: y,
+                    mode: 'lines',
+                    line: { width: 100 },
+                    name: `Output ${outputIdx}`
+                });
+            }
+
+            const layout = {
+                autosize: true,
+                paper_bgcolor: '#d4d4d4',
+                xaxis: { title: 'Time (s)', range: [0, period] },
+                yaxis: { title: 'Output', tickvals: Object.keys(pulseData), fixedrange: true, range: [0.5, Object.keys(pulseData).length - 0.5] },
+                showlegend: false,
+                plot_bgcolor: '#f0f0f0',
+                height: 500
+            };
+
+            Plotly.newPlot('pulsePlot', traces, layout);
+        }
+
+        
+        // Fetch data and plot
+        fetchSysInfo().then((systemInfo) => {
+            const clockSpeedHz = systemInfo.fpga_clock_freq || 1 // default to 1 Hz if not provided
+            fetchPulseData().then(pulseData => plotPulseTrain(pulseData, clockSpeedHz));
+        });
+
+    </script>
+</div>
+
+<script>
+const API_BASE = "http://rp-f0f587.local:8000";
+
+// GET: system info
+async function getSystemInfo() {
+    const res = await fetch(`${API_BASE}/system_info`);
+    const data = await res.json();
+    document.getElementById("systemInfo").textContent = JSON.stringify(data, null, 2);
+}
+
+// GET: status
+async function getStatus() {
+    const res = await fetch(`${API_BASE}/status`);
+    const data = await res.json();
+    document.getElementById("statusInfo").textContent = JSON.stringify(data, null, 2);
+}
+
+// POST: start, stop, reset
+async function startPulser() {
+    await fetch(`${API_BASE}/start`, { method: "POST" });
+    getStatus();
+}
+async function stopPulser() {
+    await fetch(`${API_BASE}/stop`, { method: "POST" });
+    getStatus();
+}
+async function resetPulser() {
+    await fetch(`${API_BASE}/reset`, { method: "POST" });
+    getStatus();
+}
+
+// POST: set period
+async function setPeriod() {
+    const ticks = parseInt(document.getElementById("periodTicks").value);
+    if (isNaN(ticks)) return alert("Enter a valid number for ticks");
+    await fetch(`${API_BASE}/set_period`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ period_length_ticks: ticks })
+    });
+    getStatus();
+}
+
+// POST: set pulse
+async function setPulse() {
+    const output_idx = parseInt(document.getElementById("outputIdx").value);
+    const pulse_idx = parseInt(document.getElementById("pulseIdx").value);
+    const start = parseInt(document.getElementById("startTick").value);
+    const stop = parseInt(document.getElementById("stopTick").value);
+    if ([output_idx, pulse_idx, start, stop].some(isNaN)) return alert("Fill all fields correctly");
+    await fetch(`${API_BASE}/set_pulse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ output_idx, pulse_idx, start, stop })
+    });
+    getStatus();
+}
+
+// POST: set pulse train
+async function setPulseTrain() {
+    const output_idx = parseInt(document.getElementById("outputIdx").value);
+    const pulse_train = JSON.parse(document.getElementById("pulseTrain").value);
+    if (isNaN(output_idx)) return alert("Enter a valid output index");
+    await fetch(`${API_BASE}/set_pulse_train`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ output_idx, pulse_train })
+    });
+    getStatus();
+}
+</script>
+
+</body>
+</html>
