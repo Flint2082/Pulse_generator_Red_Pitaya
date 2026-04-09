@@ -57,7 +57,7 @@ app.add_middleware(
     allow_headers=["*"],  # allow any headers
 )
 
-app.mount("/", StaticFiles(directory="../web", html=True), name="web")
+
 
 # ----------------------
 # REST API
@@ -127,3 +127,5 @@ async def set_pulse_train(config: PulseTrainConfig):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+    
+app.mount("/", StaticFiles(directory="../web", html=True), name="web")
