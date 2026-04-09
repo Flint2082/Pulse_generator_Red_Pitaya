@@ -18,5 +18,5 @@ if [ ! -f "$HOME/top.bit.bin" ]; then
 fi
 
 # Load FPGA bitstream 
-fpgautil -b $HOME/top.bit.bin
+/opt/redpitaya/bin/fpgautil -b $HOME/top.bit.bin
 
