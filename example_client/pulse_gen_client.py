@@ -1,19 +1,37 @@
 import csv
 import os
 import requests
+import logging
+import http.client
 
 
 
-class RedPitayaClient:
+
+class PulseGenClient:
     NUM_OUTPUTS = 3
     MAX_PULSES_PER_OUTPUT = 8
     
     
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, debug: bool = False):
         self.base_url = base_url.rstrip("/")
+        self.debug = debug
+        
+        self.session = requests.Session()
+        
+        # Enable detailed logging if debug mode is on
+        if self.debug:
+            http.client.HTTPConnection.debuglevel = 1
+            logging.basicConfig()
+            logging.getLogger().setLevel(logging.DEBUG)
+            requests_log = logging.getLogger("requests.packages.urllib3")
+            requests_log.setLevel(logging.DEBUG)
+            requests_log.propagate = True
+
+            
+
 
     def _post(self, endpoint: str, payload: dict | None = None):
-        response = requests.post(
+        response = self.session.post(
             f"{self.base_url}{endpoint}",
             json=payload
         )
@@ -21,7 +39,7 @@ class RedPitayaClient:
         return response.json()
 
     def _get(self, endpoint: str):
-        response = requests.get(f"{self.base_url}{endpoint}")
+        response = self.session.get(f"{self.base_url}{endpoint}")
         response.raise_for_status()
         return response.json()
 
@@ -33,6 +51,9 @@ class RedPitayaClient:
     
     def status(self):
         return self._get("/status")
+    
+    def system_info(self):
+        return self._get("/system_info")
     
     def get_pulse_config(self):
         return self._get("/pulse_config")

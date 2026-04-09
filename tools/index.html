@@ -1,20 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Pitaya Pulse Generator GUI</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    h1 { color: #333; }
+    button { margin: 5px; padding: 8px 15px; }
+    input { margin: 5px; width: 80px; }
+    .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background-color: #fff; }
+    pre { background-color: #eee; padding: 10px; }
+</style>
+</head>
 <body>
-<h2>Live Data</h2>
-<pre id="output"></pre>
+
+<h1>Red Pitaya Pulse Generator GUI</h1>
+
+<!-- System Info -->
+<div class="section">
+    <h2>System Info</h2>
+    <button onclick="getSystemInfo()">Refresh</button>
+    <pre id="systemInfo">Click "Refresh" to load system info...</pre>
+</div>
+
+<!-- Status -->
+<div class="section">
+    <h2>Status</h2>
+    <button onclick="getStatus()">Refresh</button>
+    <pre id="statusInfo">Click "Refresh" to see status...</pre>
+</div>
+
+<!-- Control -->
+<div class="section">
+    <h2>Control</h2>
+    <button onclick="startPulser()">Start</button>
+    <button onclick="stopPulser()">Stop</button>
+    <button onclick="resetPulser()">Reset</button>
+</div>
+
+<!-- Set Period -->
+<div class="section">
+    <h2>Set Period</h2>
+    <input type="number" id="periodTicks" placeholder="Ticks">
+    <button onclick="setPeriod()">Set Period</button>
+</div>
+
+<!-- Set Pulse -->
+<div class="section">
+    <h2>Set Pulse</h2>
+    <input type="number" id="outputIdx" placeholder="Output idx">
+    <input type="number" id="pulseIdx" placeholder="Pulse idx">
+    <input type="number" id="startTick" placeholder="Start">
+    <input type="number" id="stopTick" placeholder="Stop">
+    <button onclick="setPulse()">Set Pulse</button>
+</div>
 
 <script>
-const ws = new WebSocket("ws://rp-f0f587.local:8000/stream");
+const API_BASE = "http://rp-f0f587.local:8000";
 
-ws.onmessage = (event) => {
-    document.getElementById("output").textContent = event.data;
-};
+// GET: system info
+async function getSystemInfo() {
+    const res = await fetch(`${API_BASE}/system_info`);
+    const data = await res.json();
+    document.getElementById("systemInfo").textContent = JSON.stringify(data, null, 2);
+}
 
-// keep connection alive
-setInterval(() => ws.send("ping"), 1000);
+// GET: status
+async function getStatus() {
+    const res = await fetch(`${API_BASE}/status`);
+    const data = await res.json();
+    document.getElementById("statusInfo").textContent = JSON.stringify(data, null, 2);
+}
+
+// POST: start, stop, reset
+async function startPulser() {
+    await fetch(`${API_BASE}/start`, { method: "POST" });
+    getStatus();
+}
+async function stopPulser() {
+    await fetch(`${API_BASE}/stop`, { method: "POST" });
+    getStatus();
+}
+async function resetPulser() {
+    await fetch(`${API_BASE}/reset`, { method: "POST" });
+    getStatus();
+}
+
+// POST: set period
+async function setPeriod() {
+    const ticks = parseInt(document.getElementById("periodTicks").value);
+    if (isNaN(ticks)) return alert("Enter a valid number for ticks");
+    await fetch(`${API_BASE}/set_period`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ period_length_ticks: ticks })
+    });
+    getStatus();
+}
+
+// POST: set pulse
+async function setPulse() {
+    const output_idx = parseInt(document.getElementById("outputIdx").value);
+    const pulse_idx = parseInt(document.getElementById("pulseIdx").value);
+    const start = parseInt(document.getElementById("startTick").value);
+    const stop = parseInt(document.getElementById("stopTick").value);
+    if ([output_idx, pulse_idx, start, stop].some(isNaN)) return alert("Fill all fields correctly");
+    await fetch(`${API_BASE}/set_pulse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ output_idx, pulse_idx, start, stop })
+    });
+    getStatus();
+}
 </script>
-
 
 </body>
 </html>

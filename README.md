@@ -13,7 +13,8 @@ Add:
 ```ini
 [Unit]
 Description=Pulse Generator Startup Service
-After=network.target
+After=network-online.target multi-user.target
+Wants=network-online.target
 
 [Service]
 Type=simple

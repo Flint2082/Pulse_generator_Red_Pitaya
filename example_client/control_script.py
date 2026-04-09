@@ -1,25 +1,31 @@
-from pulse_gen_client import RedPitayaClient
+from pulse_gen_client import PulseGenClient
 
 
-rp = RedPitayaClient("http://rp-f0f587.local:8000")
+pg = PulseGenClient("http://rp-f0f587.local:8000", debug=False)
 
-print(rp.stop())
+print(pg.status())
 
-print(rp.reset())
+system_info = pg.system_info()
+print(system_info)
+print(system_info["fpga_clock_freq"])
 
-# print(rp.set_period(1000))
+print(pg.stop())
 
-# print(rp.set_pulse(
+print(pg.reset())
+
+# print(pg.set_period(1000))
+
+# print(pg.set_pulse(
 #     output_idx=1,
 #     pulse_idx=0,
 #     start=100,
 #     stop=200
 # ))
 
-print(rp.set_from_file("timing_settings/settings.csv"))
+print(pg.set_from_file("timing_settings/settings.csv"))
 
-print(rp.start())
+print(pg.start())
 
-print(rp.status())
+print(pg.status())
 
-print(rp.get_pulse_config())
+print(pg.get_pulse_config())

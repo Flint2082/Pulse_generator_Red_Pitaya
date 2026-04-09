@@ -4,6 +4,7 @@ import random
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 from packages.pulse_gen_interface import PulseGenInterface 
 
@@ -47,6 +48,13 @@ async def lifespan(app: FastAPI):
     print("Server shutting down, pulse generator cleaned up")
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or put your frontend's URL instead of "*"
+    allow_methods=["*"],  # allow GET, POST, OPTIONS, etc.
+    allow_headers=["*"],  # allow any headers
+)
 
 # ----------------------
 # REST API
