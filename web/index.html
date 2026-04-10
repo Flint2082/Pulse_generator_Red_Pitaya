@@ -134,6 +134,7 @@ async function getPulseData() {
 
 async function getCycleCount() {
     const data = await apiFetch('/get_cycle_count');
+    document.getElementById('cycleCount').textContent = `Cycle Count: ${data.cycle_count}`;
     return data.cycle_count;
 }
 
