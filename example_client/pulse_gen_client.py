@@ -50,13 +50,13 @@ class PulseGenClient:
     # GET endpoints
     
     def status(self):
-        return self._get("/api/status")
+        return self._get("/api/get_status")
     
     def system_info(self):
-        return self._get("/api/system_info")
+        return self._get("/api/get_system_info")
     
     def get_pulse_config(self):
-        return self._get("/api/pulse_config")
+        return self._get("/api/get_pulse_config")
     
     # POST endpoints 
 
@@ -68,6 +68,9 @@ class PulseGenClient:
 
     def reset(self):
         return self._post("/api/reset")
+    
+    def clear_outputs(self):
+        return self._post("/api/clear_outputs")
 
     def set_period(self, period_length_ticks: int):
         return self._post(

@@ -3,7 +3,7 @@ import mmap
 import struct
 
 # Base address (must be page-aligned!)
-BASE_ADDR = 0x40000000
+BASE_ADDR = 0x40000000 # TODO: make this automatically determined based on the .fpg file
 PAGE_SIZE = mmap.PAGESIZE
 MAP_SIZE = PAGE_SIZE
 
@@ -49,6 +49,21 @@ class FPGAInterface:
         except Exception as e:
             print(f"Error loading register map: {e}")
             return False
+    
+    # Parse the .fpg file to get the FPGA clock frequency from the metadata
+    # ?meta	RED_PITAYA1	xps:xsg	clk_rate	125   
+    def get_clock_freq(self, register_map_dir):
+        try:
+            with open(register_map_dir, "r", errors = "ignore") as f:
+                for line in f:
+                    if line.strip() and line.startswith("?meta"):
+                        data = line.split("\t")
+                        if data[3].strip() == "clk_rate":
+                            return int(data[4].strip()) * 1e6  # Convert MHz to Hz
+            raise ValueError("Clock frequency not found in register map file")
+        except Exception as e:
+            print(f"Error getting clock frequency: {e}")
+            return None
             
     def show_register_map(self):
         for reg_name, reg_addr in self.register_map.items():
