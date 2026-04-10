@@ -20,6 +20,9 @@ WEB_DIR = Path(__file__).parent.parent / "web"
 class PeriodConfig(BaseModel):
     period_length_ticks: int
 
+class MaxCyclesConfig(BaseModel):
+    max_cycles: int
+
 class PulseConfig(BaseModel):
     output_idx: int
     pulse_idx: int
@@ -118,6 +121,14 @@ async def set_period(config: PeriodConfig):
     try:
         app.state.pulser.set_period(config.period_length_ticks)
         return JSONResponse({"status": "period updated", "received": config.model_dump()})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/set_max_cycles")
+async def set_max_cycles(config: MaxCyclesConfig):
+    try:
+        app.state.pulser.set_max_cycles(config.max_cycles)
+        return JSONResponse({"status": "max cycles updated", "received": {"max_cycles": config.max_cycles}})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

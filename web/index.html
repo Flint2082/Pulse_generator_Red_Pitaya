@@ -5,95 +5,229 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Red Pitaya Pulse Generator GUI</title>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
 <style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
     body {
         font-family: Arial, sans-serif;
-        padding: 20px;
-        background-color: #e0e0e0;
+        background: #e0e0e0;
+        height: 100vh;
+        overflow: hidden;
+        padding: 16px;
     }
 
-    h1 { color: #333; }
-
-    button {
-        margin: 5px;
-        width: 120px;
-        padding: 8px 15px;
+    h1 {
+        margin-bottom: 12px;
+        color: #333;
     }
 
-    input {
-        margin: 5px;
-        width: 80px;
+    .app {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 60px);
+        gap: 16px;
+    }
+
+    .top-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        min-height: 0;
+    }
+
+    .panel {
+        background: #d4d4d4;
+        border: 2px solid #7a7a7a;
+        border-radius: 1px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
     }
 
     .section {
-        border: 3px solid #7a7a7a;
-        padding: 15px;
-        margin-bottom: 20px;
-        background-color: #d4d4d4;
+        background: #ececec;
+        border-radius: 1px;
+        padding: 12px;
     }
 
-    .inline-section {
-        display: inline-block;
-        width: 40%;
-        vertical-align: top;
+    .section h2 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        color: #222;
     }
 
-    pre {
-        background-color: #eee;
-        padding: 10px;
+    .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    button {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 1px;
+        background: #3b82f6;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    button:hover {
+        background: #2563eb;
+    }
+
+    .input-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    input {
+        padding: 8px;
+        border: 1px solid #aaa;
+        border-radius: 6px;
+        width: 100px;
+    }
+
+    .output-card {
+        background: white;
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #bbb;
+    }
+
+    .output-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .output-value {
+        font-size: 1rem;
+        font-weight: bold;
+        color: #111;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .plot-panel {
+        flex: 1;
+        background: #d4d4d4;
+        border: 2px solid #7a7a7a;
+        border-radius: 1px;
+        padding: 12px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #pulsePlot {
+        flex: 1;
+        width: 100%;
+        min-height: 0;
     }
 </style>
 </head>
+
 <body>
 
-<h1>Red Pitaya Pulse Generator GUI</h1>
+<h1>Pulse Generator GUI</h1>
 
-<div class="section inline-section">
-    <h2>System Info</h2>
-    <button onclick="getSystemInfo()">Refresh</button>
-    <pre id="systemInfo">Click "Refresh" to load system info...</pre>
+<div class="app">
+
+    <div class="top-row">
+
+
+
+
+        <!-- OUTPUTS COLUMN -->
+        <div class="panel">
+
+            <div class="section">
+                <h2>System Info</h2>
+                <button onclick="getSystemInfo()">Refresh</button>
+                <div class="output-card">
+                    <div class="output-label">System</div>
+                    <div class="output-value" id="systemInfo">--</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Status</h2>
+                <button onclick="getStatus()">Refresh</button>
+                <div class="output-card">
+                    <div class="output-label">Current Status</div>
+                    <div class="output-value" id="statusInfo">--</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Cycle Count</h2>
+                <div class="output-card">
+                    <div class="output-value" id="cycleCount">Loading...</div>
+                </div>
+            </div>
+
+        </div>
+
+                <!-- INPUTS COLUMN -->
+        <div class="panel">
+
+            <div class="section">
+                <h2>Control</h2>
+                <div class="button-row">
+                    <button onclick="startPulser()">Start</button>
+                    <button onclick="stopPulser()">Stop</button>
+                    <button onclick="resetPulser()">Reset</button>
+                    <button onclick="clearOutputs()">Clear Outputs</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Set Period</h2>
+                <div class="input-row">
+                    <input type="number" id="periodTicks" placeholder="Ticks">
+                    <button onclick="setPeriod()">Set Period</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Set Pulse</h2>
+                <div class="input-row">
+                    <input type="number" id="outputIdx" placeholder="Output">
+                    <input type="number" id="pulseIdx" placeholder="Pulse">
+                    <input type="number" id="startTick" placeholder="Start">
+                    <input type="number" id="stopTick" placeholder="Stop">
+                    <button onclick="setPulse()">Set Pulse</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Cycle Limit</h2>
+                <div class="input-row">
+                    <input type="number" id="maxCycleCount" placeholder="Cycles">
+                    <button onclick="setMaxCycles()">Set Max</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM PLOT -->
+    <div class="plot-panel">
+        <button onclick="refreshPlot()" style="margin-bottom:10px; width:160px;">Refresh Plot</button>
+        <div id="pulsePlot"></div>
+    </div>
+
 </div>
-
-<div class="section inline-section">
-    <h2>Status</h2>
-    <button onclick="getStatus()">Refresh</button>
-    <pre id="statusInfo">Click "Refresh" to see status...</pre>
-</div>
-
-<div class="section">
-    <h2>Cycle Count</h2>
-    <pre id="cycleCount">Loading...</pre>
-</div>
-
-
-<div class="section">
-    <h2>Control</h2>
-    <button onclick="startPulser()">Start</button>
-    <button onclick="stopPulser()">Stop</button>
-    <button onclick="resetPulser()">Reset</button>
-    <button onclick="clearOutputs()">Clear Outputs</button>
-</div>
-
-<div class="section">
-    <h2>Set Period</h2>
-    <input type="number" id="periodTicks" placeholder="Ticks">
-    <button onclick="setPeriod()">Set Period</button>
-</div>
-
-<div class="section">
-    <h2>Set Pulse</h2>
-    <input type="number" id="outputIdx" placeholder="Output idx">
-    <input type="number" id="pulseIdx" placeholder="Pulse idx">
-    <input type="number" id="startTick" placeholder="Start">
-    <input type="number" id="stopTick" placeholder="Stop">
-    <button onclick="setPulse()">Set Pulse</button>
-</div>
-
-<div class="section">
-    <h2>Pulse Train Visualization</h2>
-    <div id="pulsePlot" style="width:100%;height:500px;"></div>
-</div>
-
 <script>
 // Automatically support both local Live Server and Red Pitaya hosting.
 // If running on localhost/127.0.0.1, target RP manually.
@@ -138,6 +272,17 @@ async function getCycleCount() {
     return data.cycle_count;
 }
 
+async function setMaxCycles() {
+    const maxCycles = parseInt(document.getElementById('maxCycleCount').value);
+    if (isNaN(maxCycles)) return alert('Enter a valid number for max cycles');
+
+    await apiFetch('/set_max_cycles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_cycles: maxCycles })
+    });
+}
+
 async function refreshPlot() {
     try {
         const systemInfo = await getSystemInfo();
@@ -151,8 +296,7 @@ async function refreshPlot() {
 
 function plotPulseTrain(pulseData, clockSpeedHz) {
     const traces = [];
-
-    let maxTick = 0;
+       
 
     period_length_ticks = pulseData[0][0][1] || 1; // Get period length from pulse data
 
@@ -187,7 +331,7 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         yaxis: {
             title: 'Output',
             fixedrange: true,
-            range: [0.5, Object.keys(pulseData).length - 0.5]
+            range: [0.5, parseInt(systemInfo.num_outputs) + 0.5]
         },
         showlegend: false,
         height: 500
@@ -210,6 +354,7 @@ async function resetPulser() {
 
 async function clearOutputs() {
     await apiFetch('/clear_outputs', { method: 'POST' });
+    await refreshPlot();
 }
 
 async function setPeriod() {
@@ -221,6 +366,7 @@ async function setPeriod() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period_length_ticks: ticks })
     });
+    await refreshPlot();
 }
 
 async function setPulse() {
@@ -238,9 +384,9 @@ async function setPulse() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })
     });
+    await refreshPlot();
 }
 
-setInterval(refreshPlot, 2000); // Refresh plot every 2 seconds
 
 setInterval(getCycleCount, 100); // Update cycle count more frequently for responsiveness
 
