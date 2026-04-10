@@ -6,7 +6,7 @@ class PulseGenInterface:
     def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         directory = os.path.join(base_dir, "..", "..", "model_composer", "pulse_generator", "outputs")
-        newest_file = max(
+        self.fpg_file = max(
             (os.path.join(directory, f) for f in os.listdir(directory)),
             key=os.path.getmtime
         )
@@ -15,12 +15,12 @@ class PulseGenInterface:
         self.MAX_PULSES_PER_OUTPUT = 32
         self.NUM_OUTPUTS = 3
 
-        print("Newest file", newest_file)
+        print("Newest file", self.fpg_file)
 
         try:
             self.fpga = FPGAInterface()
-            self.fpga.load_register_map(newest_file)
-            self.fpga_clock_freq_Hz = self.fpga.get_clock_freq(newest_file)
+            self.fpga.load_register_map(self.fpg_file)
+            self.fpga_clock_freq_Hz = self.fpga.get_clock_freq(self.fpg_file)
             self.fpga.test_fpga_interface("counter_en")
         except Exception as e:
             print(f"Failed to upload FPGA program: {e}")

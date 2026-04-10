@@ -59,7 +59,7 @@ class FPGAInterface:
                     if line.strip() and line.startswith("?meta"):
                         data = line.split("\t")
                         if data[3].strip() == "clk_rate":
-                            return int(data[4].strip() * 1e6)  # Convert MHz to Hz
+                            return int(data[4].strip()) * 1e6  # Convert MHz to Hz
             raise ValueError("Clock frequency not found in register map file")
         except Exception as e:
             print(f"Error getting clock frequency: {e}")
