@@ -12,8 +12,7 @@ class PulseGenInterface:
         )
  
         # Constants
-        self.FPGA_CLOCK_FREQ = 125e6  # 125 MHz
-        self.MAX_PULSES_PER_OUTPUT = 8
+        self.MAX_PULSES_PER_OUTPUT = 32
         self.NUM_OUTPUTS = 3
 
         print("Newest file", newest_file)
@@ -21,23 +20,11 @@ class PulseGenInterface:
         try:
             self.fpga = FPGAInterface()
             self.fpga.load_register_map(newest_file)
+            self.fpga_clock_freq_Hz = self.fpga.get_clock_freq(newest_file)
             self.fpga.test_fpga_interface("counter_en")
         except Exception as e:
             print(f"Failed to upload FPGA program: {e}")
             raise
-
-    def help(self):
-        print("Available methods:")
-        print("  start() - Start the pulse generator")
-        print("  stop() - Stop the pulse generator")
-        print("  reset() - Reset the counters and clear outputs")
-        print(" ")
-        print("  set_period(period_length_ticks) - Set the period length in ticks (must be > 0 and < 2^32)")
-        print("  write_pulse(output_idx, pulse_idx, start, stop) - Write a single pulse to the specified output and pulse index (output_idx starts at 1, pulse_idx starts at 0 and must be less than 8, start and stop are in ticks)")
-        print("  write_pulse_train(output_idx, pulse_train) - Write a list of pulses to the specified output (output_idx starts at 1, pulse_train is a list of (start, stop) tuples)")
-        print("  write_pulse_trains(pulse_trains) - Write pulse trains to all outputs. takes output of get_pulse_data_from_file() as input")
-        print("  get_pulse_data_from_file(file_path) - Load pulse data from a CSV file with columns out_idx, start_ticks, stop_ticks (out_idx 0 corresponds to the period)")
-        print("  print_pulse_data(pulse_data) - Print pulse data loaded from a file in a human-readable format")
         
     def start(self):
         if(self.fpga.read_register("counter_en") == 1):
@@ -66,10 +53,10 @@ class PulseGenInterface:
         self.fpga.write_register("reset", 0)
     
     def time_to_ticks(self, time_sec):
-        return int(time_sec * self.FPGA_CLOCK_FREQ)    
+        return int(time_sec * self.fpga_clock_freq_Hz)
     
     def ticks_to_time(self, ticks):
-        return ticks / self.FPGA_CLOCK_FREQ
+        return ticks / self.fpga_clock_freq_Hz
     
     def set_period(self, period_length_ticks):
         if period_length_ticks <= 0:

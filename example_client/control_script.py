@@ -7,22 +7,30 @@ print(pg.status())
 
 system_info = pg.system_info()
 print(system_info)
-print(system_info["fpga_clock_freq"])
 
 print(pg.stop())
 
 print(pg.reset())
 
-# print(pg.set_period(1000))
+print(pg.set_period(1000))
 
-# print(pg.set_pulse(
-#     output_idx=1,
-#     pulse_idx=0,
-#     start=100,
-#     stop=200
-# ))
+print(pg.set_pulse(
+    output_idx=1,
+    pulse_idx=0,
+    start=100,
+    stop=200
+))
 
-print(pg.set_from_file("timing_settings/settings.csv"))
+print(pg.set_pulse_train(
+    output_idx=2,
+    pulse_train=[
+        (50, 150),
+        (300, 400),
+        (500, 700)
+    ]
+))
+
+# print(pg.set_from_file("timing_settings/settings.csv"))
 
 print(pg.start())
 

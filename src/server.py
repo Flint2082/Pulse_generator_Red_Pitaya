@@ -72,7 +72,7 @@ async def status():
 @app.get("/api/system_info")
 async def system_info():
     return {
-        "fpga_clock_freq": app.state.pulser.FPGA_CLOCK_FREQ,
+        "fpga_clock_freq": app.state.pulser.fpga_clock_freq_Hz,
         "num_outputs": app.state.pulser.NUM_OUTPUTS,
         "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
     }
