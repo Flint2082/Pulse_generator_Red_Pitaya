@@ -45,7 +45,6 @@ async def lifespan(app: FastAPI):
     
     # Shutdown code
     app.state.pulser.stop()
-    app.state.pulser.cleanup()
     print("Server shutting down, pulse generator cleaned up")
 
 app = FastAPI(lifespan=lifespan)
