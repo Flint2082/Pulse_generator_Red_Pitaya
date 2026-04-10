@@ -68,7 +68,7 @@ app.add_middleware(
 @app.get("/api/status")
 async def status():
     status = app.state.pulser.get_status()
-    return {"status": status, "clients": len(clients)}
+    return {"status": status}
 
 @app.get("/api/system_info")
 async def system_info():

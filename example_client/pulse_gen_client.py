@@ -50,28 +50,28 @@ class PulseGenClient:
     # GET endpoints
     
     def status(self):
-        return self._get("/status")
+        return self._get("/api/status")
     
     def system_info(self):
-        return self._get("/system_info")
+        return self._get("/api/system_info")
     
     def get_pulse_config(self):
-        return self._get("/pulse_config")
+        return self._get("/api/pulse_config")
     
     # POST endpoints 
 
     def start(self):
-        return self._post("/start")
+        return self._post("/api/start")
 
     def stop(self):
-        return self._post("/stop")
+        return self._post("/api/stop")
 
     def reset(self):
-        return self._post("/reset")
+        return self._post("/api/reset")
 
     def set_period(self, period_length_ticks: int):
         return self._post(
-            "/set_period",
+            "/api/set_period",
             {"period_length_ticks": period_length_ticks}
         )
 
@@ -83,7 +83,7 @@ class PulseGenClient:
         stop: int
     ):
         return self._post(
-            "/set_pulse",
+            "/api/set_pulse",
             {
                 "output_idx": output_idx,
                 "pulse_idx": pulse_idx,
@@ -94,7 +94,7 @@ class PulseGenClient:
         
     def set_pulse_train(self, output_idx: int, pulse_train: list[tuple[int, int]]):
         return self._post(
-            "/set_pulse_train",
+            "/api/set_pulse_train",
             {
                 "output_idx": output_idx,
                 "pulse_train": pulse_train
