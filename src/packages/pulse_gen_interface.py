@@ -47,7 +47,6 @@ class PulseGenInterface:
         return status
     
     def reset(self):
-        self.clear_all_outputs()
         self.fpga.write_register("reset", 1)
         print("Resetting pulse generator")
         self.fpga.write_register("reset", 0)
@@ -65,6 +64,12 @@ class PulseGenInterface:
             raise ValueError(f"Period length must be less than {2**32 - 1}")
         print(f"Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
         self.fpga.write_register("period", period_length_ticks)
+        
+    def set_max_cycles(self, max_cycles):
+        self.fpga.write_register("max_cycles", max_cycles)
+        
+    def get_cycle_count(self):
+        return self.fpga.read_register("cycle_counter")
     
     def set_pulse(self, output_idx, pulse_idx, start, stop):
         # Validate inputs

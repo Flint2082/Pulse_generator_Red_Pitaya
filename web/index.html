@@ -65,6 +65,7 @@
     <button onclick="startPulser()">Start</button>
     <button onclick="stopPulser()">Stop</button>
     <button onclick="resetPulser()">Reset</button>
+    <button onclick="clearOutputs()">Clear Outputs</button>
 </div>
 
 <div class="section">
@@ -109,26 +110,32 @@ async function apiFetch(path, options = {}) {
 }
 
 async function getSystemInfo() {
-    const data = await apiFetch('/system_info');
+    const data = await apiFetch('/get_system_info');
     document.getElementById('systemInfo').textContent = JSON.stringify(data, null, 2);
     return data;
 }
 
 async function getStatus() {
-    const data = await apiFetch('/status');
+    const data = await apiFetch('/get_status');
     document.getElementById('statusInfo').textContent = JSON.stringify(data, null, 2);
     return data;
 }
 
-async function fetchPulseData() {
-    const data = await apiFetch('/pulse_config');
+async function getPulseData() {
+    const data = await apiFetch('/get_pulse_config');
     return data.pulse_data;
+}
+
+async function getCycleCount() {
+    const data = await apiFetch('/get_cycle_count');
+    return data.cycle_count;
 }
 
 async function refreshPlot() {
     try {
         const systemInfo = await getSystemInfo();
-        const pulseData = await fetchPulseData();
+        const pulseData = await getPulseData();
+        const cycleCount = await getCycleCount();
         plotPulseTrain(pulseData, systemInfo.fpga_clock_freq);
     } catch (err) {
         console.error('Plot refresh failed:', err);
@@ -184,18 +191,18 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
 async function startPulser() {
     await apiFetch('/start', { method: 'POST' });
-    await getStatus();
 }
 
 async function stopPulser() {
     await apiFetch('/stop', { method: 'POST' });
-    await getStatus();
 }
 
 async function resetPulser() {
     await apiFetch('/reset', { method: 'POST' });
-    await getStatus();
-    await refreshPlot();
+}
+
+async function clearOutputs() {
+    await apiFetch('/clear_outputs', { method: 'POST' });
 }
 
 async function setPeriod() {
@@ -232,10 +239,11 @@ async function setPulse() {
     await refreshPlot();
 }
 
-setInterval(getStatus, 1000);
+setInterval(refreshPlot, 2000); // Refresh plot every 2 seconds
 
-refreshPlot();
-getStatus();
+setInterval(getCycleCount, 100); // Update cycle count more frequently for responsiveness
+
+
 </script>
 
 </body>

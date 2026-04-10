@@ -64,24 +64,29 @@ app.add_middleware(
 
 # GET endpoints
 
-@app.get("/api/status")
+@app.get("/api/get_status")
 async def status():
     status = app.state.pulser.get_status()
     return {"status": status}
 
-@app.get("/api/system_info")
+@app.get("/api/get_system_info")
 async def system_info():
     return {
-        "fpg_file": app.state.pulser.fpg_file,
+        "fpg_file": app.state.pulser.fpg_file.split("/")[-1],
         "fpga_clock_freq": app.state.pulser.fpga_clock_freq_Hz,
         "num_outputs": app.state.pulser.NUM_OUTPUTS,
         "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
     }
 
-@app.get("/api/pulse_config")
+@app.get("/api/get_pulse_config")
 async def get_pulse_config():
     pulse_data = app.state.pulser.get_pulse_data()
     return {"pulse_data": pulse_data}
+
+@app.get("/api/get_cycle_count")
+async def get_cycle_count():
+    cycle_count = app.state.pulser.get_cycle_count()
+    return {"cycle_count": cycle_count}
 
 # POST endpoints
 
@@ -99,9 +104,14 @@ async def stop():
 
 @app.post("/api/reset")
 async def reset():
-    app.state.pulser.clear_all_outputs()
-    return JSONResponse({"status": "pulse generator reset"})
+    app.state.pulser.reset()
+    return JSONResponse({"status": "pulse generator counters reset"})
 
+
+@app.post("/api/clear_outputs")
+async def clear_outputs():
+    app.state.pulser.clear_all_outputs()
+    return JSONResponse({"status": "all outputs cleared"})
 
 @app.post("/api/set_period")
 async def set_period(config: PeriodConfig):
