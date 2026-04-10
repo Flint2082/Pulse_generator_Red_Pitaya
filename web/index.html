@@ -61,6 +61,12 @@
 </div>
 
 <div class="section">
+    <h2>Cycle Count</h2>
+    <pre id="cycleCount">Loading...</pre>
+</div>
+
+
+<div class="section">
     <h2>Control</h2>
     <button onclick="startPulser()">Start</button>
     <button onclick="stopPulser()">Stop</button>
@@ -214,9 +220,6 @@ async function setPeriod() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period_length_ticks: ticks })
     });
-
-    await getStatus();
-    await refreshPlot();
 }
 
 async function setPulse() {
@@ -234,9 +237,6 @@ async function setPulse() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })
     });
-
-    await getStatus();
-    await refreshPlot();
 }
 
 setInterval(refreshPlot, 2000); // Refresh plot every 2 seconds
