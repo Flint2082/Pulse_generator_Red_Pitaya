@@ -7,7 +7,7 @@ import struct
 BASE_ADDR = 0x40000000 # TODO: make this automatically determined based on the .fpg file
 PAGE_SIZE = mmap.PAGESIZE
 MAP_SIZE = PAGE_SIZE
-BITSTREAM_PATH = os.path.join("root", "top.bit.bin")
+BITSTREAM_PATH = os.path.join("/root", "top.bit.bin")
 
 class FPGAInterface:
     def __init__(self, base_addr=BASE_ADDR, map_size=MAP_SIZE, bitstream_path=BITSTREAM_PATH):
