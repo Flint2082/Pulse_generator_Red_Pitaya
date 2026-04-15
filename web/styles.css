@@ -123,3 +123,53 @@ input {
     width: 100%;
     min-height: 0;
 }
+
+.output-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.output-row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.value {
+    font-weight: bold;
+    color: #111;
+}
+
+/* Big number for cycle count */
+.big-number {
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Status indicator */
+.status-indicator {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Status colors */
+.status-running {
+    background: #16a34a;
+}
+
+.status-stopped {
+    background: #dc2626;
+}
+
+.status-idle {
+    background: #6b7280;
+}

@@ -20,13 +20,35 @@ async function apiFetch(path, options = {}) {
 
 async function getSystemInfo() {
     const data = await apiFetch('/get_system_info');
-    document.getElementById('systemInfo').textContent = JSON.stringify(data, null, 2);
+
+    document.getElementById('fpgaFile').textContent = data.fpg_file;
+    document.getElementById('clockFreq').textContent =
+        (data.fpga_clock_freq / 1e6).toFixed(0) + ' MHz';
+
+    document.getElementById('numOutputs').textContent = data.num_outputs;
+    document.getElementById('maxPulses').textContent = data.max_pulses_per_output;
+
     return data;
 }
 
 async function getStatus() {
     const data = await apiFetch('/get_status');
-    document.getElementById('statusInfo').textContent = JSON.stringify(data, null, 2);
+
+    const el = document.getElementById('statusIndicator');
+
+    el.textContent = data.status.toUpperCase();
+
+    // reset classes
+    el.classList.remove('status-running', 'status-stopped', 'status-idle');
+
+    if (data.status === 'running') {
+        el.classList.add('status-running');
+    } else if (data.status === 'stopped') {
+        el.classList.add('status-stopped');
+    } else {
+        el.classList.add('status-idle');
+    }
+
     return data;
 }
 
@@ -37,7 +59,10 @@ async function getPulseData() {
 
 async function getCycleCount() {
     const data = await apiFetch('/get_cycle_count');
-    document.getElementById('cycleCount').textContent = `Cycle Count: ${data.cycle_count}`;
+
+    document.getElementById('cycleCount').textContent =
+        data.cycle_count.toLocaleString();
+
     return data.cycle_count;
 }
 
@@ -113,19 +138,22 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
 async function startPulser() {
     await apiFetch('/start', { method: 'POST' });
+    await refresh();
 }
 
 async function stopPulser() {
     await apiFetch('/stop', { method: 'POST' });
+    await refresh();
 }
 
 async function resetPulser() {
     await apiFetch('/reset', { method: 'POST' });
+    await refresh(); // Refresh all data and plot after reset
 }
 
 async function clearOutputs() {
     await apiFetch('/clear_outputs', { method: 'POST' });
-    await refreshPlot();
+    await refresh();
 }
 
 async function refresh() {
@@ -143,7 +171,7 @@ async function setPeriod() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period_length_ticks: ticks })
     });
-    await refreshPlot();
+    await refresh();
 }
 
 async function setPulse() {
