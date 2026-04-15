@@ -18,6 +18,8 @@ class PulseGenClient:
         
         self.session = requests.Session()
         
+        self.load_bitstream()
+        
         # Enable detailed logging if debug mode is on
         if self.debug:
             http.client.HTTPConnection.debuglevel = 1
