@@ -14,9 +14,11 @@ class PulseGenInterface:
         # Constants
         self.MAX_PULSES_PER_OUTPUT = 32
         self.NUM_OUTPUTS = 3
+        
+        self.BITSTREAM_PATH = os.path.join(base_dir, "root", "top.bit.bin")
 
         print("Newest file", self.fpg_file)
-
+ 
         try:
             self.fpga = FPGAInterface()
             self.fpga.load_register_map(self.fpg_file)
@@ -25,6 +27,13 @@ class PulseGenInterface:
         except Exception as e:
             print(f"Failed to upload FPGA program: {e}")
             raise
+        
+    def load_bitstream(self):
+        result = self.fpga.load_bitstream()
+        if result["status"] == "error":
+            print(f"Error loading bitstream: {result.get('message', result.get('stderr', 'Unknown error'))}")
+        else:
+            print(f"Bitstream loaded successfully: {result.get('stdout', '')}")
         
     def start(self):
         if(self.fpga.read_register("counter_en") == 1):

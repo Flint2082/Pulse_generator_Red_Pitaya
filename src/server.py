@@ -93,6 +93,12 @@ async def get_cycle_count():
 
 # POST endpoints
 
+@app.post("/api/load_bitstream")
+async def load_bitstream():
+    app.state.pulser.load_bitstream()
+    return JSONResponse({"status": "bitstream loaded"})
+
+
 @app.post("/api/start")
 async def start():
     app.state.pulser.start()

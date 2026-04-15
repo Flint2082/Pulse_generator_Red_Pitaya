@@ -1,3 +1,4 @@
+import subprocess
 import os
 import mmap
 import struct
@@ -6,11 +7,13 @@ import struct
 BASE_ADDR = 0x40000000 # TODO: make this automatically determined based on the .fpg file
 PAGE_SIZE = mmap.PAGESIZE
 MAP_SIZE = PAGE_SIZE
+BITSTREAM_PATH = os.path.join(os.path.dirname(__file__), "root", "top.bit.bin")
 
 class FPGAInterface:
-    def __init__(self, base_addr=BASE_ADDR, map_size=MAP_SIZE):
+    def __init__(self, base_addr=BASE_ADDR, map_size=MAP_SIZE, bitstream_path=BITSTREAM_PATH):
         self.base_addr = base_addr
         self.map_size = map_size
+        self.BITSTREAM_PATH = bitstream_path
 
         with open("/dev/mem", "r+b") as f:
             self.mem = mmap.mmap(
@@ -18,6 +21,23 @@ class FPGAInterface:
                 self.map_size,
                 offset=self.base_addr
             )
+            
+    def load_bitstream(self):
+        try:
+            result = subprocess.run(
+                ["/opt/redpitaya/bin/fpgautil", "-b", self.BITSTREAM_PATH],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode != 0:
+                return {"status": "error", "stderr": result.stderr}
+            return {"status": "success", "stdout": result.stdout}
+
+        except Exception as e:
+            return {"status": "error","message": str(e)} 
+            
 
     def test_fpga_interface(self, test_register):
         try:

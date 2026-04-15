@@ -19,7 +19,7 @@ async function apiFetch(path, options = {}) {
 }
 
 async function getSystemInfo() {
-    const data = await apiFetch('/get_system_info');
+    const data = await apiFetch('/api/get_system_info');
 
     document.getElementById('fpgaFile').textContent = data.fpg_file;
     document.getElementById('clockFreq').textContent =
@@ -32,7 +32,7 @@ async function getSystemInfo() {
 }
 
 async function getStatus() {
-    const data = await apiFetch('/get_status');
+    const data = await apiFetch('/api/get_status');
 
     const el = document.getElementById('statusIndicator');
 
@@ -53,12 +53,12 @@ async function getStatus() {
 }
 
 async function getPulseData() {
-    const data = await apiFetch('/get_pulse_config');
+    const data = await apiFetch('/api/get_pulse_config');
     return data.pulse_data;
 }
 
 async function getCycleCount() {
-    const data = await apiFetch('/get_cycle_count');
+    const data = await apiFetch('/api/get_cycle_count');
 
     document.getElementById('cycleCount').textContent =
         data.cycle_count.toLocaleString();
@@ -70,7 +70,7 @@ async function setMaxCycles() {
     const maxCycles = parseInt(document.getElementById('maxCycleCount').value);
     if (isNaN(maxCycles)) return alert('Enter a valid number for max cycles');
 
-    await apiFetch('/set_max_cycles', {
+    await apiFetch('/api/set_max_cycles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ max_cycles: maxCycles })
@@ -136,23 +136,28 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
     Plotly.react('pulsePlot', traces, layout);
 }
 
+async function loadBitstream() {
+    await apiFetch('/api/load_bitstream', { method: 'POST' });
+    await refresh(); // Refresh all data and plot after loading bitstream
+}
+
 async function startPulser() {
-    await apiFetch('/start', { method: 'POST' });
+    await apiFetch('/api/start', { method: 'POST' });
     await refresh();
 }
 
 async function stopPulser() {
-    await apiFetch('/stop', { method: 'POST' });
+    await apiFetch('/api/stop', { method: 'POST' });
     await refresh();
 }
 
 async function resetPulser() {
-    await apiFetch('/reset', { method: 'POST' });
+    await apiFetch('/api/reset', { method: 'POST' });
     await refresh(); // Refresh all data and plot after reset
 }
 
 async function clearOutputs() {
-    await apiFetch('/clear_outputs', { method: 'POST' });
+    await apiFetch('/api/clear_outputs', { method: 'POST' });
     await refresh();
 }
 
@@ -166,7 +171,7 @@ async function setPeriod() {
     const ticks = parseInt(document.getElementById('periodTicks').value);
     if (isNaN(ticks)) return alert('Enter a valid number for ticks');
 
-    await apiFetch('/set_period', {
+    await apiFetch('/api/set_period', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period_length_ticks: ticks })
@@ -184,7 +189,7 @@ async function setPulse() {
         return alert('Fill all fields correctly');
     }
 
-    await apiFetch('/set_pulse', {
+    await apiFetch('/api/set_pulse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })

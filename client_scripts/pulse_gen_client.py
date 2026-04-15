@@ -59,6 +59,9 @@ class PulseGenClient:
         return self._get("/api/get_pulse_config")
     
     # POST endpoints 
+    
+    def load_bitstream(self):
+        return self._post("/api/load_bitstream")
 
     def start(self):
         return self._post("/api/start")
