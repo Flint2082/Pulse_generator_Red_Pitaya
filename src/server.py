@@ -69,7 +69,7 @@ app.add_middleware(
 # GET endpoints
     
 
-@app.get("/get_logs")
+@app.get("/api/get_logs")
 def get_logs():
     try:
         result = subprocess.check_output(
