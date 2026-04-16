@@ -1,5 +1,4 @@
 // Automatically support both local Live Server and Red Pitaya hosting.
-// If running on localhost/127.0.0.1, target RP manually.
 const API_BASE = (
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
@@ -17,6 +16,10 @@ async function apiFetch(path, options = {}) {
 
     return res.json();
 }
+
+// ==========================
+// DATA FETCHING
+// ==========================
 
 async function getSystemInfo() {
     const data = await apiFetch('/get_system_info');
@@ -38,7 +41,6 @@ async function getStatus() {
 
     el.textContent = data.status.toUpperCase();
 
-    // reset classes
     el.classList.remove('status-running', 'status-stopped', 'status-idle');
 
     if (data.status === 'running') {
@@ -66,79 +68,214 @@ async function getCycleCount() {
     return data.cycle_count;
 }
 
-async function setMaxCycles() {
-    const maxCycles = parseInt(document.getElementById('maxCycleCount').value);
-    if (isNaN(maxCycles)) return alert('Enter a valid number for max cycles');
+// ==========================
+// SAFE POLLING 
+// ==========================
 
-    await apiFetch('/set_max_cycles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ max_cycles: maxCycles })
-    });
-}
+let cycleBusy = false;
 
+async function safeGetCycleCount() {
+    if (cycleBusy) return;
+    cycleBusy = true;
 
-async function refreshPlot() {
     try {
-        const systemInfo = await getSystemInfo();
-        const pulseData = await getPulseData();
-        const cycleCount = await getCycleCount();
-        plotPulseTrain(pulseData, systemInfo.fpga_clock_freq);
-    } catch (err) {
-        console.error('Plot refresh failed:', err);
+        await getCycleCount();
+    } finally {
+        cycleBusy = false;
     }
 }
 
-function plotPulseTrain(pulseData, clockSpeedHz) {
-    const traces = [];
-       
+// ==========================
+// PLOT REFRESH
+// ==========================
 
-    period_length_ticks = pulseData[0][0][1] || 1; // Get period length from pulse data
+let plotRefreshing = false;
+
+async function refreshPlot() {
+    if (plotRefreshing) return;
+
+    plotRefreshing = true;
+
+    const plotDiv = document.getElementById('pulsePlot');
+    plotDiv.style.opacity = 0.6;
+
+    try {
+        const systemInfo = await getSystemInfo();
+        const pulseData = await getPulseData();
+        await getCycleCount();
+
+        plotPulseTrain(pulseData, systemInfo.fpga_clock_freq);
+
+    } catch (err) {
+        console.error('Plot refresh failed:', err);
+    } finally {
+        plotDiv.style.opacity = 1;
+        plotRefreshing = false;
+    }
+}
+
+// ==========================
+// PLOTTING
+// ==========================
+
+function plotPulseTrain(pulseData, clockSpeedHz) {
+    if (!pulseData || !pulseData[0] || !pulseData[0][0]) {
+        console.warn('Invalid pulse data');
+        return;
+    }
+
+    const traces = [];
+
+    const period_ticks = pulseData[0][0][1];
+    const period = period_ticks / clockSpeedHz;
 
     for (const [outputIdx, pulses] of Object.entries(pulseData)) {
-        if (outputIdx == 0) continue; // Skip period length entry
+        if (outputIdx == 0) continue;
+
         const numericOutput = Number(outputIdx);
-        const x = [];
-        const y = [];
+
+        const x = [0];
+        const y = [numericOutput - 0.4]; // start LOW
+
+        // sort pulses just in case
+        pulses.sort((a, b) => a[0] - b[0]);
 
         pulses.forEach(([start, stop]) => {
-            x.push(start / clockSpeedHz, stop / clockSpeedHz, null);
-            y.push(numericOutput, numericOutput, null);
+            const tStart = start / clockSpeedHz;
+            const tStop = stop / clockSpeedHz;
+
+            // go HIGH
+            x.push(tStart, tStart);
+            y.push(numericOutput - 0.4, numericOutput + 0.4);
+
+            // stay HIGH
+            x.push(tStop);
+            y.push(numericOutput + 0.4);
+
+            // go LOW
+            x.push(tStop);
+            y.push(numericOutput - 0.4);
         });
+
+        // extend to full period
+        x.push(period);
+        y.push(numericOutput - 0.4);
 
         traces.push({
             x,
             y,
             mode: 'lines',
-            line: { width: 100 },
-            name: `Output ${outputIdx}`
+            line: { width: 2, shape: 'hv' },
+            name: `Output ${outputIdx}`,
+            hovertemplate:
+                'Output: ' + numericOutput +
+                '<br>Time: %{x}s' +
+                '<extra></extra>'
         });
+
+        
     }
+
+    const numOutputs = Object.keys(pulseData).length - 1;
 
     const layout = {
         autosize: true,
         paper_bgcolor: '#d4d4d4',
         plot_bgcolor: '#f0f0f0',
+
         xaxis: {
             title: 'Time (s)',
-            range: [0, period_length_ticks / clockSpeedHz]
+            range: [0, period]
         },
+
         yaxis: {
             title: 'Output',
             fixedrange: true,
-            range: [0.5, 3 + 0.5] // TODO: Dynamically set y-axis range based on number of outputs
+            range: [0.5, numOutputs + 0.5],
+            dtick: 1
         },
-        margin: { t: 20, r: 20, b: 20, l: 50 },
-        showlegend: false,
-        
+
+        margin: { t: 20, r: 20, b: 40, l: 60 },
+        showlegend: true
     };
 
     Plotly.react('pulsePlot', traces, layout);
+
+
+    window._plotPeriod = period;
+
+
 }
+
+let cursorPoints = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+
+
+    const plotDiv = document.getElementById('pulsePlot');
+
+    plotDiv.on('plotly_click', function(data) {
+
+        const el = document.getElementById('deltaT');
+            if (el) {
+                el.textContent = `Δt: ? µs`;
+            }
+        if (!data.points || data.points.length === 0) return;
+
+        const x = data.points[0].x;
+
+        cursorPoints.push(x);
+
+        // keep only last 2 points
+        if (cursorPoints.length > 2) {
+            cursorPoints.shift();
+        }
+
+        drawCursorLines(cursorPoints);
+
+        // Δt calculation
+        if (cursorPoints.length === 2) {
+            const dt = Math.abs(cursorPoints[1] - cursorPoints[0]);
+
+            console.log(`Δt = ${dt} s (${dt * 1e6} µs)`);
+
+            const el = document.getElementById('deltaT');
+            if (el) {
+                el.textContent = `Δt: ${(dt * 1e6).toFixed(2)} µs`;
+            }
+        }
+    });
+});
+
+function drawCursorLines(points) {
+    const shapes = points.map(x => ({
+        type: 'line',
+        x0: x,
+        x1: x,
+        y0: 0,
+        y1: 1,
+        xref: 'x',
+        yref: 'paper',
+        line: {
+            color: 'red',
+            width: 2,
+            dash: 'dot'
+        }
+    }));
+
+    Plotly.relayout('pulsePlot', {
+        shapes: shapes
+    });
+}
+
+
+// ==========================
+// CONTROL ACTIONS
+// ==========================
 
 async function loadBitstream() {
     await apiFetch('/load_bitstream', { method: 'POST' });
-    await refresh(); // Refresh all data and plot after loading bitstream
+    await refresh();
 }
 
 async function startPulser() {
@@ -153,7 +290,7 @@ async function stopPulser() {
 
 async function resetPulser() {
     await apiFetch('/reset', { method: 'POST' });
-    await refresh(); // Refresh all data and plot after reset
+    await refresh();
 }
 
 async function clearOutputs() {
@@ -176,6 +313,7 @@ async function setPeriod() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period_length_ticks: ticks })
     });
+
     await refresh();
 }
 
@@ -194,10 +332,29 @@ async function setPulse() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ output_idx, pulse_idx, start, stop })
     });
+
     await refreshPlot();
 }
 
+// ==========================
+// DOUBLE-CLICK HANDLER 
+// ==========================
 
-refresh(); // Initial load
-setInterval(getCycleCount, 100); // Update cycle count more frequently for responsiveness
+window.addEventListener('DOMContentLoaded', () => {
+    const plotDiv = document.getElementById('pulsePlot');
 
+    plotDiv.addEventListener('dblclick', () => {
+        console.log('Double click → update plot');
+
+        refresh();
+    });
+});
+
+// ==========================
+// INIT
+// ==========================
+
+refresh();
+
+// Reduced + safe polling
+setInterval(safeGetCycleCount, 100);

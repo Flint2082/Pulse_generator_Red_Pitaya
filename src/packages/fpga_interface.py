@@ -23,6 +23,7 @@ class FPGAInterface:
             )
             
     def load_bitstream(self):
+        print(f"Loading bitstream from {self.BITSTREAM_PATH}...")
         try:
             result = subprocess.run(
                 ["/opt/redpitaya/bin/fpgautil", "-b", self.BITSTREAM_PATH],
