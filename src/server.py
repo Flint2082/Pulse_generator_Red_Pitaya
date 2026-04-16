@@ -73,7 +73,7 @@ app.add_middleware(
 def get_logs():
     try:
         result = subprocess.check_output(
-            ["journalctl", "-u", "pulse_generator.service", "-n", "50", "--no-pager"],
+            ["journalctl", "-n", "50", "--no-pager"],
             text=True
         )
         return {"logs": result.splitlines()}
