@@ -21,6 +21,11 @@ async function apiFetch(path, options = {}) {
 // DATA FETCHING
 // ==========================
 
+async function getLogs() {
+    const data = await apiFetch('/get_logs');
+    updateLogPanel(data.logs);
+}
+
 async function getSystemInfo() {
     const data = await apiFetch('/get_system_info');
 
@@ -69,8 +74,53 @@ async function getCycleCount() {
 }
 
 // ==========================
+// LOG PANEL
+// ==========================
+
+function updateLogPanel(logs) {
+    const panel = document.getElementById('logPanel');
+
+    panel.innerHTML = '';
+
+    logs.forEach(line => {
+        const div = document.createElement('div');
+        div.classList.add('log-line');
+
+        // crude level detection
+        if (line.includes('ERROR')) {
+            div.classList.add('log-error');
+        } else if (line.includes('WARN')) {
+            div.classList.add('log-warn');
+        } else {
+            div.classList.add('log-info');
+        }
+
+        div.textContent = line;
+        panel.appendChild(div);
+    });
+
+    // auto-scroll to bottom
+    panel.scrollTop = panel.scrollHeight;
+}
+
+
+
+// ==========================
 // SAFE POLLING 
 // ==========================
+
+let logBusy = false;
+
+async function safeGetLogs() {
+    if (logBusy) return;
+    logBusy = true;
+
+    try {
+        await getLogs();
+    } finally {
+        logBusy = false;
+    }
+}
 
 let cycleBusy = false;
 
@@ -84,6 +134,7 @@ async function safeGetCycleCount() {
         cycleBusy = false;
     }
 }
+
 
 // ==========================
 // PLOT REFRESH
@@ -124,7 +175,10 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         return;
     }
 
+    const AMPLITUDE = 0.3;
+
     const traces = [];
+    const annotations = [];
 
     const period_ticks = pulseData[0][0][1];
     const period = period_ticks / clockSpeedHz;
@@ -135,31 +189,75 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         const numericOutput = Number(outputIdx);
 
         const x = [0];
-        const y = [numericOutput - 0.4]; // start LOW
+        const y = [numericOutput - AMPLITUDE];
 
-        // sort pulses just in case
+        // sort pulses
         pulses.sort((a, b) => a[0] - b[0]);
+
+        let prevTime = 0;
 
         pulses.forEach(([start, stop]) => {
             const tStart = start / clockSpeedHz;
             const tStop = stop / clockSpeedHz;
 
-            // go HIGH
+            // -------- LOW SEGMENT --------
+            if (tStart > prevTime) {
+                const mid = (prevTime + tStart) / 2;
+                const duration = tStart - prevTime;
+
+                annotations.push({
+                    x: mid,
+                    y: numericOutput - AMPLITUDE * 1.2,
+                    text: `${(duration * 1e6).toFixed(3)} µs`,
+                    showarrow: false,
+                    font: { size: 12, color: 'black' }
+                });
+            }
+
+            // waveform: rising edge
             x.push(tStart, tStart);
-            y.push(numericOutput - 0.4, numericOutput + 0.4);
+            y.push(numericOutput - AMPLITUDE, numericOutput + AMPLITUDE);
 
-            // stay HIGH
+            // waveform: high
             x.push(tStop);
-            y.push(numericOutput + 0.4);
+            y.push(numericOutput + AMPLITUDE);
 
-            // go LOW
+            // -------- HIGH SEGMENT --------
+            const midHigh = (tStart + tStop) / 2;
+            const highDuration = tStop - tStart;
+
+            annotations.push({
+                x: midHigh,
+                y: numericOutput + AMPLITUDE * 1.2,
+                text: `${(highDuration * 1e6).toFixed(3)} µs`,
+                showarrow: false,
+                font: { size: 12, color: 'black' }
+            });
+
+            // falling edge
             x.push(tStop);
-            y.push(numericOutput - 0.4);
+            y.push(numericOutput - AMPLITUDE);
+
+            prevTime = tStop;
         });
 
-        // extend to full period
+        // -------- FINAL LOW SEGMENT --------
+        if (prevTime < period) {
+            const mid = (prevTime + period) / 2;
+            const duration = period - prevTime;
+
+            annotations.push({
+                x: mid,
+                y: numericOutput - AMPLITUDE * 1.2,
+                text: `${(duration * 1e6).toFixed(3)} µs`,
+                showarrow: false,
+                font: { size: 12, color: 'black' }
+            });
+        }
+
+        // extend waveform to full period
         x.push(period);
-        y.push(numericOutput - 0.4);
+        y.push(numericOutput - AMPLITUDE);
 
         traces.push({
             x,
@@ -172,8 +270,6 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
                 '<br>Time: %{x}s' +
                 '<extra></extra>'
         });
-
-        
     }
 
     const numOutputs = Object.keys(pulseData).length - 1;
@@ -196,76 +292,14 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         },
 
         margin: { t: 20, r: 20, b: 40, l: 60 },
-        showlegend: true
+        showlegend: true,
+
+        annotations: annotations   // 👈 KEY ADDITION
     };
 
     Plotly.react('pulsePlot', traces, layout);
 
-
     window._plotPeriod = period;
-
-
-}
-
-let cursorPoints = [];
-
-window.addEventListener('DOMContentLoaded', () => {
-
-
-    const plotDiv = document.getElementById('pulsePlot');
-
-    plotDiv.on('plotly_click', function(data) {
-
-        const el = document.getElementById('deltaT');
-            if (el) {
-                el.textContent = `Δt: ? µs`;
-            }
-        if (!data.points || data.points.length === 0) return;
-
-        const x = data.points[0].x;
-
-        cursorPoints.push(x);
-
-        // keep only last 2 points
-        if (cursorPoints.length > 2) {
-            cursorPoints.shift();
-        }
-
-        drawCursorLines(cursorPoints);
-
-        // Δt calculation
-        if (cursorPoints.length === 2) {
-            const dt = Math.abs(cursorPoints[1] - cursorPoints[0]);
-
-            console.log(`Δt = ${dt} s (${dt * 1e6} µs)`);
-
-            const el = document.getElementById('deltaT');
-            if (el) {
-                el.textContent = `Δt: ${(dt * 1e6).toFixed(2)} µs`;
-            }
-        }
-    });
-});
-
-function drawCursorLines(points) {
-    const shapes = points.map(x => ({
-        type: 'line',
-        x0: x,
-        x1: x,
-        y0: 0,
-        y1: 1,
-        xref: 'x',
-        yref: 'paper',
-        line: {
-            color: 'red',
-            width: 2,
-            dash: 'dot'
-        }
-    }));
-
-    Plotly.relayout('pulsePlot', {
-        shapes: shapes
-    });
 }
 
 
@@ -301,6 +335,8 @@ async function clearOutputs() {
 async function refresh() {
     await getSystemInfo();
     await getStatus();
+    await getCycleCount();
+    await getLogs();
     await refreshPlot();
 }
 
@@ -337,24 +373,10 @@ async function setPulse() {
 }
 
 // ==========================
-// DOUBLE-CLICK HANDLER 
-// ==========================
-
-window.addEventListener('DOMContentLoaded', () => {
-    const plotDiv = document.getElementById('pulsePlot');
-
-    plotDiv.addEventListener('dblclick', () => {
-        console.log('Double click → update plot');
-
-        refresh();
-    });
-});
-
-// ==========================
 // INIT
 // ==========================
 
 refresh();
 
-// Reduced + safe polling
-setInterval(safeGetCycleCount, 100);
+setInterval(safeGetLogs, 500);
+setInterval(safeGetCycleCount, 500);

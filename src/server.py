@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import random
 from pathlib import Path
+import subprocess
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -66,6 +67,18 @@ app.add_middleware(
 # ----------------------    
 
 # GET endpoints
+    
+
+@app.get("/get_logs")
+def get_logs():
+    try:
+        result = subprocess.check_output(
+            ["journalctl", "-u", "pulse_generator.service", "-n", "50", "--no-pager"],
+            text=True
+        )
+        return {"logs": result.splitlines()}
+    except Exception as e:
+        return {"logs": [f"Error reading logs: {e}"]}
 
 @app.get("/api/get_status")
 async def status():

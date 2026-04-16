@@ -30,7 +30,7 @@ print(pg.reset())
 #     ]
 # ))
 
-print(pg.set_from_file("timing_settings/settings.csv"))
+print(pg.set_from_file("timing_settings/worst_case.csv"))
 
 print(pg.start())
 
