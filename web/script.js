@@ -23,7 +23,11 @@ async function apiFetch(path, options = {}) {
 
 async function getLogs() {
     const data = await apiFetch('/get_logs');
-    updateLogPanel(data.logs);
+    lastLogs = data.logs;
+
+    if (!logsPaused) {
+        updateLogPanel(lastLogs);
+    }
 }
 
 async function getSystemInfo() {
@@ -35,6 +39,8 @@ async function getSystemInfo() {
 
     document.getElementById('numOutputs').textContent = data.num_outputs;
     document.getElementById('maxPulses').textContent = data.max_pulses_per_output;
+
+    updateInputLimits(data);
 
     return data;
 }
@@ -74,8 +80,210 @@ async function getCycleCount() {
 }
 
 // ==========================
+// DYNAMIC UI UPDATES
+// ==========================
+
+function updateInputLimits(systemInfo) {
+    document.getElementById('outputIdx').max = systemInfo.num_outputs;
+    document.getElementById('pulseIdx').max = systemInfo.max_pulses_per_output - 1;
+}
+
+async function toggleCycleLimit(enabled) {
+    const input = document.getElementById('maxCycleCount');
+
+    try {
+        await apiFetch('/enable_cycle_limit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(enabled)
+        });
+
+        input.disabled = !enabled;
+
+        if (enabled) {
+            input.focus();
+        }
+
+    } catch (err) {
+        console.error('Failed to toggle cycle limit:', err);
+        alert('Failed to toggle cycle limit');
+
+        // revert checkbox on failure
+        document.getElementById('cycleLimitEnabled').checked = !enabled;
+    }
+}
+
+async function syncCycleLimit() {
+    try {
+        const data = await apiFetch('/get_cycle_limit');
+
+        const checkbox = document.getElementById('cycleLimitEnabled');
+        const input = document.getElementById('maxCycleCount');
+
+        checkbox.checked = data.enabled;
+        input.disabled = !data.enabled;
+
+        if (data.enabled && data.max_cycles !== null) {
+            input.value = data.max_cycles;
+        } else {
+            input.value = '';
+        }
+
+    } catch (err) {
+        console.error('Failed to sync cycle limit:', err);
+    }
+}
+
+// ==========================
+// CYCLE LIMIT HANDLING
+// ==========================
+
+async function handleCycleSubmit(event) {
+    event.preventDefault(); // prevent page reload
+
+    const enabled = document.getElementById('cycleLimitEnabled').checked;
+
+    if (!enabled) {
+        return; // ignore if checkbox not enabled
+    }
+
+    await setMaxCycles();
+}
+
+
+// ==========================
+// CSV FILE HANDLING
+// ==========================
+
+async function uploadCSV() {
+    const fileInput = document.getElementById('csvFile');
+
+    if (!fileInput.files.length) {
+        alert('Select a CSV file first');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const text = await file.text();
+
+    const lines = text.split('\n');
+
+    const pulseMap = {}; // { output_idx: [[start, stop], ...] }
+    let period = null;
+
+    for (let line of lines) {
+        line = line.trim();
+
+        // skip empty or header
+        if (!line || line.startsWith('out_idx')) continue;
+
+        const parts = line.split(',').map(s => s.trim());
+
+        if (parts.length < 3) continue;
+
+        const out_idx = parseInt(parts[0]);
+        const start = parseInt(parts[1]);
+        const stop = parseInt(parts[2]);
+
+        if ([out_idx, start, stop].some(isNaN)) {
+            console.warn('Invalid row skipped:', line);
+            continue;
+        }
+
+        // PERIOD
+        if (out_idx === 0) {
+            period = stop;
+            continue;
+        }
+
+        if (!pulseMap[out_idx]) {
+            pulseMap[out_idx] = [];
+        }
+
+        pulseMap[out_idx].push([start, stop]);
+    }
+
+    clearOutputs();
+
+    try {
+        // 1. Set period FIRST
+        if (period !== null) {
+            await apiFetch('/set_period', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ period_length_ticks: period })
+            });
+        }
+
+        // 2. Send each output via set_pulse_train
+        for (const [output_idx, pulses] of Object.entries(pulseMap)) {
+
+            // sort pulses (important)
+            pulses.sort((a, b) => a[0] - b[0]);
+
+            await apiFetch('/set_pulse_train', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    output_idx: Number(output_idx),
+                    pulse_train: pulses
+                })
+            });
+        }
+
+        await refresh();
+
+    } catch (err) {
+        console.error('CSV upload failed:', err);
+        alert('Failed to apply CSV');
+    }
+}
+
+async function downloadCSV() {
+    try {
+        const pulseData = await getPulseData();
+
+        let csv = 'out_idx,start_ticks,stop_ticks\n';
+
+        // Period (output 0)
+        if (pulseData[0] && pulseData[0][0]) {
+            const period = pulseData[0][0][1];
+            csv += `0,0,${period}\n\n`;
+        }
+
+        // Outputs
+        for (const [output_idx, pulses] of Object.entries(pulseData)) {
+            if (output_idx == 0) continue;
+
+            pulses.forEach(([start, stop]) => {
+                csv += `${output_idx},${start},${stop}\n`;
+            });
+
+            csv += '\n';
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pulse_config.csv';
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error('Download failed:', err);
+        alert('Failed to download CSV');
+    }
+}
+
+// ==========================
 // LOG PANEL
 // ==========================
+
+let logsPaused = false;
+let lastLogs = [];
 
 function updateLogPanel(logs) {
     const panel = document.getElementById('logPanel');
@@ -86,7 +294,6 @@ function updateLogPanel(logs) {
         const div = document.createElement('div');
         div.classList.add('log-line');
 
-        // crude level detection
         if (line.includes('ERROR')) {
             div.classList.add('log-error');
         } else if (line.includes('WARN')) {
@@ -99,10 +306,19 @@ function updateLogPanel(logs) {
         panel.appendChild(div);
     });
 
-    // auto-scroll to bottom
-    panel.scrollTop = panel.scrollHeight;
 }
 
+function toggleLogs() {
+    logsPaused = !logsPaused;
+
+    const btn = document.getElementById('logToggleBtn');
+    btn.textContent = logsPaused ? 'Resume' : 'Pause';
+
+    // When resuming, immediately refresh
+    if (!logsPaused) {
+        updateLogPanel(lastLogs);
+    }
+}
 
 
 // ==========================
@@ -291,10 +507,10 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
             dtick: 1
         },
 
-        margin: { t: 20, r: 20, b: 40, l: 60 },
-        showlegend: true,
+        margin: { t: 30, r: 40, b: 40, l: 40 },
+        showlegend: false,
 
-        annotations: annotations   // 👈 KEY ADDITION
+        annotations: annotations   
     };
 
     Plotly.react('pulsePlot', traces, layout);
@@ -338,6 +554,7 @@ async function refresh() {
     await getCycleCount();
     await getLogs();
     await refreshPlot();
+    await syncCycleLimit();
 }
 
 async function setPeriod() {
@@ -359,9 +576,33 @@ async function setPulse() {
     const start = parseInt(document.getElementById('startTick').value);
     const stop = parseInt(document.getElementById('stopTick').value);
 
+    const maxOutputs = parseInt(document.getElementById('numOutputs').textContent);
+    const maxPulses = parseInt(document.getElementById('maxPulses').textContent);
+    const period = window._plotPeriodTicks;
+
+    // ---- VALIDATION ----
+
     if ([output_idx, pulse_idx, start, stop].some(isNaN)) {
         return alert('Fill all fields correctly');
     }
+
+    if (output_idx < 1 || output_idx > maxOutputs) {
+        return alert(`Output must be between 1 and ${maxOutputs}`);
+    }
+
+    if (pulse_idx < 0 || pulse_idx >= maxPulses) {
+        return alert(`Pulse index must be 0–${maxPulses - 1}`);
+    }
+
+    if (start < 0 || stop < start) {
+        return alert('Stop must be greater than start');
+    }
+
+    if (stop > period) {
+        return alert(`Stop exceeds period (${period} ticks)`);
+    }
+
+    // ---- SEND ----
 
     await apiFetch('/set_pulse', {
         method: 'POST',
@@ -372,11 +613,34 @@ async function setPulse() {
     await refreshPlot();
 }
 
+async function setMaxCycles() {
+    const enabled = document.getElementById('cycleLimitEnabled').checked;
+
+    if (!enabled) {
+        return alert('Enable cycle limit first');
+    }
+
+    const maxCycles = parseInt(document.getElementById('maxCycleCount').value);
+
+    if (isNaN(maxCycles) || maxCycles <= 0) {
+        return alert('Enter a valid number of cycles');
+    }
+
+    await apiFetch('/set_max_cycles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_cycles: maxCycles })
+    });
+
+    await syncCycleLimit(); 
+}
+
 // ==========================
 // INIT
 // ==========================
 
 refresh();
 
-setInterval(safeGetLogs, 500);
+setInterval(safeGetLogs, 1000);
+setInterval(getStatus, 1000);
 setInterval(safeGetCycleCount, 500);

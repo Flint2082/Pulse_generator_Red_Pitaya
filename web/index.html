@@ -46,10 +46,10 @@
             <div class="section">
                 <h2>Set Pulse</h2>
                 <div class="input-row">
-                    <input type="number" id="outputIdx" placeholder="Output">
-                    <input type="number" id="pulseIdx" placeholder="Pulse">
-                    <input type="number" id="startTick" placeholder="Start">
-                    <input type="number" id="stopTick" placeholder="Stop">
+                    <input type="number" id="outputIdx" placeholder="Output" min="1" step="1">
+                    <input type="number" id="pulseIdx" placeholder="Pulse" min="0" step="1">
+                    <input type="number" id="startTick" placeholder="Start" min="0" step="1">
+                    <input type="number" id="stopTick" placeholder="Stop" min="1" step="1">
                     <button onclick="setPulse()">Set Pulse</button>
                     <button onclick="clearOutputs()">Clear All Outputs</button>
                 </div>
@@ -57,21 +57,35 @@
 
             <div class="section">
                 <h2>Cycle Limit</h2>
-                <div class="input-row">
-                    <input type="number" id="maxCycleCount" placeholder="Cycles">
-                    <button onclick="setMaxCycles()">Set Max</button>
-                    <input type="checkbox" id="cycleLimitEnabled" onchange="toggleCycleLimit(this.checked)">
-                    <label for="cycleLimitEnabled">Enable Cycle Limit</label>
-                </div>
+
+                <form id="cycleForm" onsubmit="handleCycleSubmit(event)">
+                    <div class="input-row">
+                        <input 
+                            type="checkbox" 
+                            id="cycleLimitEnabled" 
+                            onchange="toggleCycleLimit(this.checked)"
+                        >
+
+                        <input 
+                            type="number" 
+                            id="maxCycleCount" 
+                            placeholder="Cycles"
+                            min="1"
+                            step="1"
+                            disabled
+                        >
+                    </div>
+                </form>
             </div>
-
-        </div>
-
-        <div class="panel">
             <div class="section">
-                <h2>Logs</h2>
-                <div id="logPanel" class="log-panel"></div>
+                <h2>Pulse Config (CSV)</h2>
+
+                <input type="file" id="csvFile" accept=".csv" style="width: 50%"">
+                <button onclick="uploadCSV()">Upload</button>
+
+                <button onclick="downloadCSV()">Download Current</button>
             </div>
+
         </div>
 
                 <!-- OUTPUTS COLUMN -->
@@ -96,6 +110,10 @@
                         <span class="label">Max Pulses</span>
                         <span class="value" id="maxPulses">--</span>
                     </div>
+                    <div class="output-row">
+                        <span class="label">Cycle count</span>
+                        <span class="value" id="cycleCount">--</span>
+                    </div>
                 </div>
             </div>
 
@@ -106,14 +124,19 @@
                 </div>
             </div>
 
-            <div class="section">
-                <h2>Cycle Count</h2>
-                <div class="output-card">
-                    <div class="big-number" id="cycleCount">--</div>
-                </div>
-            </div>
-
         </div>
+
+        
+        <!-- LOGS COLUMN -->
+
+        <div class="panel">
+            <div class="section">
+                <h2>Logs</h2>
+                <button onclick="toggleLogs()" id="logToggleBtn" style="margin-bottom: 10px">Pause</button>
+                <div id="logPanel" class="log-panel"></div>
+            </div>
+        </div>
+
     </div>
 
 

@@ -99,10 +99,20 @@ async def get_pulse_config():
     pulse_data = app.state.pulser.get_pulse_data()
     return {"pulse_data": pulse_data}
 
+@app.get("/api/get_cycle_limit")
+async def get_cycle_limit():
+    return {
+        "enabled": app.state.pulser.cycle_limit_enabled,
+        "max_cycles": app.state.pulser.max_cycles
+    }
+
 @app.get("/api/get_cycle_count")
 async def get_cycle_count():
     cycle_count = app.state.pulser.get_cycle_count()
     return {"cycle_count": cycle_count}
+
+
+
 
 # POST endpoints
 
@@ -140,6 +150,14 @@ async def set_period(config: PeriodConfig):
     try:
         app.state.pulser.set_period(config.period_length_ticks)
         return JSONResponse({"status": "period updated", "received": config.model_dump()})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/enable_cycle_limit")
+async def enable_cycle_limit(enabled: bool):
+    try:
+        app.state.pulser.enable_cycle_limit(enabled)
+        return JSONResponse({"status": f"cycle limit {'enabled' if enabled else 'disabled'}", "received": {"enabled": enabled}})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

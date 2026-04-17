@@ -26,7 +26,7 @@ h1 {
 
 .top-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 2fr;
     gap: 16px;
     min-height: 0;
 }
@@ -43,7 +43,7 @@ h1 {
 
 .section {
     background: #ececec;
-    border-radius: 1px;
+    border-radius: 3px;
     padding: 12px;
 }
 
@@ -62,7 +62,7 @@ h1 {
 button {
     padding: 10px 14px;
     border: none;
-    border-radius: 1px;
+    border-radius: 3px;
     background: #3b82f6;
     color: white;
     cursor: pointer;
@@ -82,13 +82,19 @@ button:hover {
 input {
     padding: 8px;
     border: 1px solid #aaa;
-    border-radius: 6px;
+    border-radius: 3px;
     width: 100px;
+}
+
+input:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .output-card {
     background: white;
-    border-radius: 8px;
+    border-radius: 3px;
     padding: 12px;
     border: 1px solid #bbb;
 }
@@ -145,18 +151,13 @@ input {
     color: #111;
 }
 
-/* Big number for cycle count */
-.big-number {
-    font-size: 2rem;
-    font-weight: bold;
-    text-align: center;
-}
+
 
 /* Status indicator */
 .status-indicator {
     text-align: center;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 3px;
     font-weight: bold;
     color: white;
 }
@@ -175,17 +176,18 @@ input {
 }
 
 .log-panel {
-    height: 500px;
+    height: 400px;
     overflow-y: auto;
     background: #111;
     color: #eee;
     font-family: monospace;
     font-size: 12px;
     padding: 10px;
-    border-radius: 5px;
+    border-radius: 3px;
 }
 
 .log-line {
+    margin-top: 2px;
     margin-bottom: 2px;
 }
 

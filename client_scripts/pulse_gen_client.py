@@ -82,6 +82,18 @@ class PulseGenClient:
             "/api/set_period",
             {"period_length_ticks": period_length_ticks}
         )
+    
+    def enable_cycle_limit(self, enabled: bool):
+        return self._post(
+            "/api/enable_cycle_limit",
+            {"enabled": enabled}
+        )
+        
+    def set_max_cycles(self, max_cycles: int):
+        return self._post(
+            "/api/set_max_cycles",
+            {"max_cycles": max_cycles}
+        )
 
     def set_pulse(
         self,
