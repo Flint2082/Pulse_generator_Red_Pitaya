@@ -8,11 +8,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import traceback
+import logging
 
 from packages.pulse_gen_interface import PulseGenInterface 
 
 
 WEB_DIR = Path(__file__).parent.parent / "web"
+
+logger = logging.getLogger(__name__)
+
 
 # ----------------------
 # Datastructures
@@ -79,39 +84,59 @@ def get_logs():
         )
         return {"logs": result.splitlines()}
     except Exception as e:
-        return {"logs": [f"Error reading logs: {e}"]}
+        logger.exception("Failed to read logs")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.get("/api/get_status")
 async def status():
-    status = app.state.pulser.get_status()
-    return {"status": status}
+    try:
+        status = app.state.pulser.get_status()
+        return {"status": status}
+    except Exception as e:
+        logger.exception("Failed to read status")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.get("/api/get_system_info")
 async def system_info():
-    return {
-        "fpg_file": app.state.pulser.fpg_file.split("/")[-1],
-        "fpga_clock_freq": app.state.pulser.fpga_clock_freq_Hz,
-        "num_outputs": app.state.pulser.NUM_OUTPUTS,
-        "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
-    }
+    try:
+        return {
+            "fpg_file": app.state.pulser.fpg_file.split("/")[-1],
+            "fpga_clock_freq": app.state.pulser.fpga_clock_freq_Hz,
+            "num_outputs": app.state.pulser.NUM_OUTPUTS,
+            "max_pulses_per_output": app.state.pulser.MAX_PULSES_PER_OUTPUT
+        }
+    except Exception as e:
+        logger.exception("Failed to read system info")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.get("/api/get_pulse_config")
 async def get_pulse_config():
-    pulse_data = app.state.pulser.get_pulse_data()
-    return {"pulse_data": pulse_data}
+    try:
+        pulse_data = app.state.pulser.get_pulse_data()
+        return {"pulse_data": pulse_data}
+    except Exception as e:
+        logger.exception("Failed to read pulse config")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.get("/api/get_cycle_config")
 async def get_cycle_config():
-    return {
-        "enabled": app.state.pulser.cycle_limit_enabled,
-        "max_cycles": app.state.pulser.max_cycles
-    }
+    try:
+        return {
+            "enabled": app.state.pulser.cycle_limit_enabled,
+            "max_cycles": app.state.pulser.max_cycles
+        }
+    except Exception as e:
+        logger.exception("Failed to read cycle config")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.get("/api/get_cycle_count")
 async def get_cycle_count():
-    cycle_count = app.state.pulser.get_cycle_count()
-    return {"cycle_count": cycle_count}
-
+    try:
+        cycle_count = app.state.pulser.get_cycle_count()
+        return {"cycle_count": cycle_count}
+    except Exception as e:
+        logger.exception("Failed to read cycle count")
+        raise HTTPException(status_code=500,detail=str(e))
 
 
 
@@ -119,32 +144,52 @@ async def get_cycle_count():
 
 @app.post("/api/load_bitstream")
 async def load_bitstream():
-    app.state.pulser.load_bitstream()
-    return JSONResponse({"status": "bitstream loaded"})
+    try:
+        app.state.pulser.load_bitstream()
+        return JSONResponse({"status": "bitstream loaded"})
+    except Exception as e:
+        logger.exception("Failed to load bitstream")
+        raise HTTPException(status_code=500,detail=str(e)) 
 
 
 @app.post("/api/start")
 async def start():
-    app.state.pulser.start()
-    return JSONResponse({"status": "started"})
+    try:
+        app.state.pulser.start()
+        return JSONResponse({"status": "started"})
+    except Exception as e:
+        logger.exception("Failed to start pulse generator")
+        raise HTTPException(status_code=500,detail=str(e))
 
 
 @app.post("/api/stop")
 async def stop():
-    app.state.pulser.stop()
-    return JSONResponse({"status": "stopped"})
+    try:
+        app.state.pulser.stop()
+        return JSONResponse({"status": "stopped"})
+    except Exception as e:
+        logger.exception("Failed to stop pulse generator")
+        raise HTTPException(status_code=500,detail=str(e))
 
 
 @app.post("/api/reset")
 async def reset():
-    app.state.pulser.reset()
-    return JSONResponse({"status": "pulse generator counters reset"})
+    try:
+        app.state.pulser.reset()
+        return JSONResponse({"status": "pulse generator counters reset"})
+    except Exception as e:
+        logger.exception("Failed to reset pulse generator")
+        raise HTTPException(status_code=500,detail=str(e))
 
 
 @app.post("/api/clear_outputs")
 async def clear_outputs():
-    app.state.pulser.clear_all_outputs()
-    return JSONResponse({"status": "all outputs cleared"})
+    try:
+        app.state.pulser.clear_all_outputs()
+        return JSONResponse({"status": "all outputs cleared"})
+    except Exception as e:
+        logger.exception("Failed to clear outputs")
+        raise HTTPException(status_code=500,detail=str(e))
 
 @app.post("/api/set_period")
 async def set_period(config: PeriodConfig):
@@ -152,6 +197,7 @@ async def set_period(config: PeriodConfig):
         app.state.pulser.set_period(config.period_length_ticks)
         return JSONResponse({"status": "period updated", "received": config.model_dump()})
     except Exception as e:
+        logger.exception("Failed to set period")
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/api/set_cycle_limit")
@@ -161,6 +207,7 @@ async def set_cycle_limit(config: MaxCyclesConfig):
         app.state.pulser.set_max_cycles(config.max_cycles)
         return JSONResponse({"status": "max cycles updated", "received": {"max_cycles": config.max_cycles}})
     except Exception as e:
+        logger.exception("Failed to set cycle limit")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/set_pulse")
@@ -169,6 +216,7 @@ async def set_pulse(config: PulseConfig):
         app.state.pulser.set_pulse(config.output_idx, config.pulse_idx, config.start, config.stop)
         return JSONResponse({"status": "pulse config updated", "received": config.model_dump()})
     except Exception as e:
+        logger.exception("Failed to set pulse")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/set_pulse_train")
@@ -177,6 +225,7 @@ async def set_pulse_train(config: PulseTrainConfig):
         app.state.pulser.set_pulse_train(config.output_idx, config.pulse_train)
         return JSONResponse({"status": "pulse train config updated", "received": config.model_dump()})
     except Exception as e:
+        logger.exception("Failed to set pulse train")
         raise HTTPException(status_code=500, detail=str(e))
     
     

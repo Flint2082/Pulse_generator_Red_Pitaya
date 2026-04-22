@@ -9,12 +9,29 @@ const API_BASE = (
 async function apiFetch(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, options);
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || `HTTP ${res.status}`);
+    let errorText = `HTTP ${res.status}`;
+
+    // Try to extract JSON error body
+    let body = null;
+
+    try {
+        body = await res.json();
+    } catch {
+        // ignore JSON parse failure
     }
 
-    return res.json();
+    if (!res.ok) {
+
+        if (body?.detail) {
+            errorText = body.detail;
+        } else if (body) {
+            errorText = JSON.stringify(body);
+        }
+
+        throw new Error(errorText);
+    }
+
+    return body;
 }
 
 // ==========================
