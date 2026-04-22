@@ -159,8 +159,8 @@ async def get_pulse_config():
 async def get_cycle_config():
     try:
         return {
-            "enabled": pulser().cycle_limit_enabled,
-            "max_cycles": pulser().max_cycles,
+            "enabled": pulser().set_cycle_limit_enable,
+            "max_cycles": pulser().set_max_cycles,
         }
 
     except Exception as exc:

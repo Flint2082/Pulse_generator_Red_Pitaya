@@ -74,7 +74,7 @@ class PulseGenInterface:
         print(f"Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
         self.fpga.write_register("period", period_length_ticks)
         
-    def enable_cycle_limit(self, enabled):
+    def set_cycle_limit_enable(self, enabled):
         self.fpga.write_register("cycle_limit_enable", 1 if enabled else 0)
     
     def set_max_cycles(self, max_cycles):
