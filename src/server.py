@@ -258,7 +258,7 @@ async def set_period(config: PeriodConfig):
 @app.post("/api/set_cycle_limit")
 async def set_cycle_limit(config: MaxCyclesConfig):
     try:
-        pulser().enable_cycle_limit(config.enabled)
+        pulser().set_cycle_limit_enable(config.enabled)
         pulser().set_max_cycles(config.max_cycles)
 
         return success(
