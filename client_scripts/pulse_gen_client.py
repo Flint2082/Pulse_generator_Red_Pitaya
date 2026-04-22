@@ -57,6 +57,9 @@ class PulseGenClient:
     def system_info(self):
         return self._get("/api/get_system_info")
     
+    def get_cycle_config(self):
+        return self._get("/api/get_cycle_config")
+    
     def get_pulse_config(self):
         return self._get("/api/get_pulse_config")
     
@@ -83,16 +86,10 @@ class PulseGenClient:
             {"period_length_ticks": period_length_ticks}
         )
     
-    def enable_cycle_limit(self, enabled: bool):
+    def set_cycle_limit(self, max_cycles: int, enabled: bool):
         return self._post(
-            "/api/enable_cycle_limit",
-            {"enabled": enabled}
-        )
-        
-    def set_max_cycles(self, max_cycles: int):
-        return self._post(
-            "/api/set_max_cycles",
-            {"max_cycles": max_cycles}
+            "/api/set_cycle_limit",
+            {"max_cycles": max_cycles, "enabled": enabled}
         )
 
     def set_pulse(

@@ -22,6 +22,7 @@ class PeriodConfig(BaseModel):
     period_length_ticks: int
 
 class MaxCyclesConfig(BaseModel):
+    enabled: bool
     max_cycles: int
 
 class PulseConfig(BaseModel):
@@ -99,8 +100,8 @@ async def get_pulse_config():
     pulse_data = app.state.pulser.get_pulse_data()
     return {"pulse_data": pulse_data}
 
-@app.get("/api/get_cycle_limit")
-async def get_cycle_limit():
+@app.get("/api/get_cycle_config")
+async def get_cycle_config():
     return {
         "enabled": app.state.pulser.cycle_limit_enabled,
         "max_cycles": app.state.pulser.max_cycles
@@ -153,17 +154,10 @@ async def set_period(config: PeriodConfig):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.post("/api/enable_cycle_limit")
-async def enable_cycle_limit(enabled: bool):
+@app.post("/api/set_cycle_limit")
+async def set_cycle_limit(config: MaxCyclesConfig):
     try:
-        app.state.pulser.enable_cycle_limit(enabled)
-        return JSONResponse({"status": f"cycle limit {'enabled' if enabled else 'disabled'}", "received": {"enabled": enabled}})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/set_max_cycles")
-async def set_max_cycles(config: MaxCyclesConfig):
-    try:
+        app.state.pulser.enable_cycle_limit(config.enabled)
         app.state.pulser.set_max_cycles(config.max_cycles)
         return JSONResponse({"status": "max cycles updated", "received": {"max_cycles": config.max_cycles}})
     except Exception as e:

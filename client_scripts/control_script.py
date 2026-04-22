@@ -32,6 +32,10 @@ print(pg.reset())
 
 print(pg.set_from_file("timing_settings/worst_case.csv"))
 
+print(pg.set_cycle_limit(max_cycles=10, enabled=True))
+
+print(pg.get_cycle_config())
+
 print(pg.start())
 
 print(pg.status())
