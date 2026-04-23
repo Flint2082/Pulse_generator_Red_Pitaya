@@ -158,9 +158,10 @@ async def get_pulse_config():
 @app.get("/api/get_cycle_config")
 async def get_cycle_config():
     try:
+        cycle_config = pulser().get_cycle_config()
         return {
-            "enabled": pulser().set_cycle_limit_enable,
-            "max_cycles": pulser().set_max_cycles,
+            "enabled": cycle_config["enabled"],
+            "max_cycles": cycle_config["max_cycles"]
         }
 
     except Exception as exc:

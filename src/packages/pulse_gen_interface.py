@@ -80,6 +80,11 @@ class PulseGenInterface:
     def set_max_cycles(self, max_cycles):
         self.fpga.write_register("max_cycles", max_cycles)
         
+    def get_cycle_config(self):
+        enabled = self.fpga.read_register("cycle_limit_enable") == 1
+        max_cycles = self.fpga.read_register("max_cycles")
+        return {"enabled": enabled, "max_cycles": max_cycles}
+        
     def get_cycle_count(self):
         return self.fpga.read_register("cycle_counter")
     

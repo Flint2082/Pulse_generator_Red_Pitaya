@@ -105,14 +105,27 @@ function updateInputLimits(systemInfo) {
     document.getElementById('pulseIdx').max = systemInfo.max_pulses_per_output - 1;
 }
 
-async function toggleCycleLimit(enabled) {
+// ==========================
+// CYCLE LIMIT HANDLING
+// ==========================
+
+async function handleCycleSubmit(event) {
+    event.preventDefault(); // prevent page reload
+
+    const enabled = document.getElementById('cycleLimitEnabled').checked;
+
+    await setCycleLimit(enabled);
+}
+
+
+async function setCycleLimit(enabled) {
     const input = document.getElementById('maxCycleCount');
 
     try {
-        await apiFetch('/enable_cycle_limit', {
+        await apiFetch('/set_cycle_limit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(enabled)
+            body: JSON.stringify({ enabled: enabled, max_cycles: parseInt(input.value) || 0 })
         });
 
         input.disabled = !enabled;
@@ -130,7 +143,7 @@ async function toggleCycleLimit(enabled) {
     }
 }
 
-async function syncCycleLimit() {
+async function getCycleLimit() {
     try {
         const data = await apiFetch('/get_cycle_limit');
 
@@ -151,21 +164,6 @@ async function syncCycleLimit() {
     }
 }
 
-// ==========================
-// CYCLE LIMIT HANDLING
-// ==========================
-
-async function handleCycleSubmit(event) {
-    event.preventDefault(); // prevent page reload
-
-    const enabled = document.getElementById('cycleLimitEnabled').checked;
-
-    if (!enabled) {
-        return; // ignore if checkbox not enabled
-    }
-
-    await setMaxCycles();
-}
 
 
 // ==========================
@@ -630,27 +628,6 @@ async function setPulse() {
     await refreshPlot();
 }
 
-async function setMaxCycles() {
-    const enabled = document.getElementById('cycleLimitEnabled').checked;
-
-    if (!enabled) {
-        return alert('Enable cycle limit first');
-    }
-
-    const maxCycles = parseInt(document.getElementById('maxCycleCount').value);
-
-    if (isNaN(maxCycles) || maxCycles <= 0) {
-        return alert('Enter a valid number of cycles');
-    }
-
-    await apiFetch('/set_max_cycles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ max_cycles: maxCycles })
-    });
-
-    await syncCycleLimit(); 
-}
 
 // ==========================
 // INIT
