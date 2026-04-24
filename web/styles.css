@@ -203,11 +203,12 @@ input:disabled {
 }
 
 .timing-input-group input {
-    width: 120px;
+    width: 100px;
 }
 
 .timing-input-group select {
-    width: 80px;
+    width: 60px;
+    height: 32px;
 }
 
 #pulseQuantizationInfo {

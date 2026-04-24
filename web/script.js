@@ -86,7 +86,35 @@ async function getStatus() {
 
 async function getPulseData() {
     const data = await apiFetch('/get_pulse_config');
-    document.getElementById('period').textContent = data.period + ' ticks';
+    const periodTicks = data.period;
+    const clockHz = window._clockFrequencyHz;
+
+    if (clockHz) {
+        const seconds =
+            periodTicks / clockHz;
+
+        let value;
+        let unit;
+
+        if (seconds >= 1) {
+            value = seconds;
+            unit = 's';
+        } else if (seconds >= 1e-3) {
+            value = seconds * 1e3;
+            unit = 'ms';
+        } else if (seconds >= 1e-6) {
+            value = seconds * 1e6;
+            unit = 'µs';
+        } else {
+            value = seconds * 1e9;
+            unit = 'ns';
+        }
+        document.getElementById('period').textContent =
+            `${value.toFixed(3)} ${unit}`;
+    } else {
+        document.getElementById('period').textContent =
+            `${periodTicks} ticks`;
+    }
     return data.pulse_data;
 }
 
@@ -467,8 +495,6 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
     const period_ticks = pulseData[0][0][1];
     const period = period_ticks / clockSpeedHz;
-
-    document.getElementById('period').textContent = period + ' s';
 
     for (const [outputIdx, pulses] of Object.entries(pulseData)) {
         if (outputIdx == 0) continue;

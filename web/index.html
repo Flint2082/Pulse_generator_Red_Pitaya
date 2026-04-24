@@ -38,24 +38,25 @@
             <div class="section">
                 <h2>Set Period</h2>
                 <div class="input-row">
+                    <div class="timing-input-group">
+                        <input
+                            type="number"
+                            id="periodValue"
+                            placeholder="Period"
+                            step="any"
+                        >
 
-                    <input
-                        type="number"
-                        id="periodValue"
-                        placeholder="Period"
-                        step="any"
-                    >
+                        <select id="periodUnit">
+                            <option value="1">s</option>
+                            <option value="1e-3">ms</option>
+                            <option value="1e-6" selected>µs</option>
+                            <option value="1e-9">ns</option>
+                        </select>
 
-                    <select id="periodUnit">
-                        <option value="1">s</option>
-                        <option value="1e-3">ms</option>
-                        <option value="1e-6" selected>µs</option>
-                        <option value="1e-9">ns</option>
-                    </select>
-
-                    <button onclick="setPeriod()">
-                        Set Period
-                    </button>
+                        <button onclick="setPeriod()">
+                            Set Period
+                        </button>
+                    </div>
                 </div>
                 <div id="periodQuantizationInfo"></div>
             </div>
