@@ -25,39 +25,39 @@ class PulseGenInterface:
             self.fpga_clock_freq_Hz = self.fpga.get_clock_freq(self.fpg_file)
             self.fpga.test_fpga_interface("counter_en")
         except Exception as e:
-            print(f"Failed to upload FPGA program: {e}")
+            print(f"INFO: Failed to upload FPGA program: {e}")
             raise
         
     def load_bitstream(self):
         result = self.fpga.load_bitstream()
         if result["status"] == "error":
-            print(f"Error loading bitstream: {result.get('message', result.get('stderr', 'Unknown error'))}")
+            print(f"INFO: Error loading bitstream: {result.get('message', result.get('stderr', 'Unknown error'))}")
         else:
-            print(f"Bitstream loaded successfully: {result.get('stdout', '')}")
+            print(f"INFO: Bitstream loaded successfully: {result.get('stdout', '')}")
         
     def start(self):
         if(self.fpga.read_register("counter_en") == 1):
-            print("Pulse generator is already running")
+            print("INFO: Pulse generator is already running")
             return
         self.fpga.write_register("counter_en", 1)
-        print("Starting pulse generator")
+        print("INFO: Starting pulse generator")
     
     def stop(self):
         if(self.fpga.read_register("counter_en") == 0):
-            print("Pulse generator is already stopped")
+            print("INFO: Pulse generator is already stopped")
             return
         self.fpga.write_register("counter_en", 0)
-        print("Stopping pulse generator")
+        print("INFO: Stopping pulse generator")
     
     def get_status(self):
         self.fpga.read_register("counter_en")
         status = "running" if self.fpga.read_register("counter_en") == 1 else "stopped"
-        print(f"Pulse generator is currently {status}")
+        print(f"INFO: Pulse generator is currently {status}")
         return status
     
     def reset(self):
         self.fpga.write_register("reset", 1)
-        print("Resetting pulse generator")
+        print("INFO: Resetting pulse generator")
         self.fpga.write_register("reset", 0)
     
     def time_to_ticks(self, time_sec):
@@ -71,17 +71,17 @@ class PulseGenInterface:
             raise ValueError("Period length must be greater than 0")
         if period_length_ticks > 2**32 - 1:
             raise ValueError(f"Period length must be less than {2**32 - 1}")
-        print(f"Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
+        print(f"INFO: Setting period length to {self.ticks_to_time(period_length_ticks)} seconds ({period_length_ticks} ticks)")
         self.fpga.write_register("period", period_length_ticks)
         
     def set_cycle_limit_enable(self, enabled):
-        self.fpga.write_register("cycle_limit_enable", 1 if enabled else 0)
+        self.fpga.write_register("en_cycle_limit", 1 if enabled else 0)
     
     def set_max_cycles(self, max_cycles):
         self.fpga.write_register("max_cycles", max_cycles)
         
     def get_cycle_config(self):
-        enabled = self.fpga.read_register("cycle_limit_enable") == 1
+        enabled = self.fpga.read_register("en_cycle_limit") == 1
         max_cycles = self.fpga.read_register("max_cycles")
         return {"enabled": enabled, "max_cycles": max_cycles}
         
@@ -103,7 +103,7 @@ class PulseGenInterface:
         self.fpga.write_register(f"out_{output_idx}_start_{pulse_idx}", start)
         self.fpga.write_register(f"out_{output_idx}_stop_{pulse_idx}", stop)
         
-        print(f"Writing pulse to output {output_idx}, pulse {pulse_idx}: start={start}, stop={stop}")  
+        print(f"INFO: Writing pulse to output {output_idx}, pulse {pulse_idx}: start={start}, stop={stop}")  
     
     def set_pulse_train(self, output_idx, pulse_train):
         for pulse_idx, pulse in enumerate(pulse_train):
@@ -163,9 +163,9 @@ class PulseGenInterface:
     def clear_output(self, output_idx):
         for pulse_idx in range(self.MAX_PULSES_PER_OUTPUT):
             self.set_pulse(output_idx, pulse_idx, 0, 0)
-        print(f"Cleared output {output_idx}")
+        print(f"INFO: Cleared output {output_idx}")
     
     def clear_all_outputs(self):
         for output_idx in range(1, self.NUM_OUTPUTS + 1):
             self.clear_output(output_idx)
-        print("Cleared all outputs")
+        print("INFO: Cleared all outputs")
