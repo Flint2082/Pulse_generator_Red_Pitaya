@@ -1,3 +1,7 @@
+html {
+    zoom: 0.9;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -7,9 +11,14 @@
 body {
     font-family: Arial, sans-serif;
     background: #e0e0e0;
+
     height: 100vh;
     overflow: hidden;
+
     padding: 16px;
+
+    display: flex;
+    flex-direction: column;
 }
 
 h1 {
@@ -20,7 +29,11 @@ h1 {
 .app {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px);
+
+    flex: 1;
+
+    min-height: 0;
+
     gap: 16px;
 }
 
