@@ -83,7 +83,7 @@ input {
     padding: 8px;
     border: 1px solid #aaa;
     border-radius: 3px;
-    width: 100px;
+    width: 70px;
 }
 
 input:disabled {
@@ -195,3 +195,29 @@ input:disabled {
 .log-warn { color: #f9e79f; }
 .log-error { color: #ff6b6b; }
 .log-debug { color: #6a9955; }
+
+.timing-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.timing-input-group input {
+    width: 120px;
+}
+
+.timing-input-group select {
+    width: 80px;
+}
+
+#pulseQuantizationInfo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+#periodQuantizationInfo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #444;
+}

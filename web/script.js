@@ -629,19 +629,99 @@ async function refresh() {
 }
 
 async function setPeriod() {
-    const ticks = parseInt(document.getElementById('periodTicks').value);
-    if (isNaN(ticks)) return alert('Enter a valid number for ticks');
+
+    // ---------------------------------
+    // INPUTS
+    // ---------------------------------
+
+    const value = parseFloat(
+        document.getElementById('periodValue').value
+    );
+
+    const unitScale = parseFloat(
+        document.getElementById('periodUnit').value
+    );
+
+    // ---------------------------------
+    // VALIDATION
+    // ---------------------------------
+
+    if (isNaN(value) || value <= 0) {
+        return alert(
+            'Enter a valid period'
+        );
+    }
+
+    // ---------------------------------
+    // SYSTEM INFO
+    // ---------------------------------
+
+    const clockHz = window._clockFrequencyHz;
+
+    if (!clockHz) {
+        return alert(
+            'Clock frequency unavailable'
+        );
+    }
+
+    // ---------------------------------
+    // CONVERT TO FPGA TICKS
+    // ---------------------------------
+
+    const seconds =
+        value * unitScale;
+
+    const ticks =
+        Math.round(seconds * clockHz);
+
+    const quantizedSeconds =
+        ticks / clockHz;
+
+    // ---------------------------------
+    // USER FEEDBACK
+    // ---------------------------------
+
+    const info = document.getElementById(
+        'periodQuantizationInfo'
+    );
+
+    info.innerHTML = `
+        FPGA Quantization:<br>
+
+        Actual Period:
+        ${(quantizedSeconds * 1e6).toFixed(3)}
+        µs<br>
+
+        Clock Ticks:
+        ${ticks.toLocaleString()}
+    `;
+
+    // ---------------------------------
+    // SEND
+    // ---------------------------------
 
     await apiFetch('/set_period', {
+
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period_length_ticks: ticks })
+
+        headers: {
+            'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+            period_length_ticks: ticks
+        })
+
     });
 
     await refresh();
 }
 
 async function setPulse() {
+
+    // ---------------------------------
+    // INPUTS
+    // ---------------------------------
 
     const output_idx = parseInt(
         document.getElementById('outputIdx').value
@@ -651,16 +731,18 @@ async function setPulse() {
         document.getElementById('pulseIdx').value
     );
 
-    // ---------------------------------
-    // INPUT VALUES (seconds)
-    // ---------------------------------
-
-    const startSeconds = parseFloat(
-        document.getElementById('startTick').value
+    const startInput = parseFloat(
+        document.getElementById('startTime').value
     );
 
-    const stopSeconds = parseFloat(
-        document.getElementById('stopTick').value
+    const stopInput = parseFloat(
+        document.getElementById('stopTime').value
+    );
+
+    // selected unit scale factor
+
+    const unitScale = parseFloat(
+        document.getElementById('timeUnit').value
     );
 
     // ---------------------------------
@@ -684,28 +766,6 @@ async function setPulse() {
     }
 
     // ---------------------------------
-    // CONVERT SECONDS -> TICKS
-    // ---------------------------------
-
-    // round to nearest FPGA clock cycle
-
-    const start = Math.round(
-        startSeconds * clockHz
-    );
-
-    const stop = Math.round(
-        stopSeconds * clockHz
-    );
-
-    // actual quantized values
-
-    const quantizedStartSeconds =
-        start / clockHz;
-
-    const quantizedStopSeconds =
-        stop / clockHz;
-
-    // ---------------------------------
     // VALIDATION
     // ---------------------------------
 
@@ -713,12 +773,42 @@ async function setPulse() {
         [
             output_idx,
             pulse_idx,
-            startSeconds,
-            stopSeconds
+            startInput,
+            stopInput
         ].some(isNaN)
     ) {
         return alert('Fill all fields correctly');
     }
+
+    // ---------------------------------
+    // CONVERT TO SECONDS
+    // ---------------------------------
+
+    const startSeconds =
+        startInput * unitScale;
+
+    const stopSeconds =
+        stopInput * unitScale;
+
+    // ---------------------------------
+    // FPGA QUANTIZATION
+    // ---------------------------------
+
+    const start =
+        Math.round(startSeconds * clockHz);
+
+    const stop =
+        Math.round(stopSeconds * clockHz);
+
+    const quantizedStart =
+        start / clockHz;
+
+    const quantizedStop =
+        stop / clockHz;
+
+    // ---------------------------------
+    // VALIDATION
+    // ---------------------------------
 
     if (
         output_idx < 1 ||
@@ -734,14 +824,11 @@ async function setPulse() {
         pulse_idx >= maxPulses
     ) {
         return alert(
-            `Pulse index must be 0–${maxPulses - 1}`
+            `Pulse index must be 0-${maxPulses - 1}`
         );
     }
 
-    if (
-        start < 0 ||
-        stop <= start
-    ) {
+    if (stop <= start) {
         return alert(
             'Stop must be greater than start'
         );
@@ -749,19 +836,31 @@ async function setPulse() {
 
     if (stop > periodTicks) {
         return alert(
-            `Stop exceeds period (${periodTicks} ticks)`
+            `Pulse exceeds period`
         );
     }
 
     // ---------------------------------
-    // OPTIONAL USER FEEDBACK
+    // USER FEEDBACK
     // ---------------------------------
 
-    console.log(
-        `Quantized pulse:
-        start = ${quantizedStartSeconds}s (${start} ticks)
-        stop  = ${quantizedStopSeconds}s (${stop} ticks)`
-    );
+    const info =
+        document.getElementById(
+            'pulseQuantizationInfo'
+        );
+
+    info.innerHTML = `
+        FPGA Quantization:<br>
+        Start: ${(quantizedStart * 1e6).toFixed(3)} µs
+        (${start} ticks)<br>
+
+        Stop: ${(quantizedStop * 1e6).toFixed(3)} µs
+        (${stop} ticks)<br>
+
+        Width:
+        ${((quantizedStop - quantizedStart) * 1e6).toFixed(3)}
+        µs
+    `;
 
     // ---------------------------------
     // SEND
@@ -784,7 +883,6 @@ async function setPulse() {
 
     await refreshPlot();
 }
-
 
 // ==========================
 // INIT

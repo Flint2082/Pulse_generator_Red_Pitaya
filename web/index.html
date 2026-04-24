@@ -31,16 +31,33 @@
                     <button onclick="startPulser()">Start</button>
                     <button onclick="stopPulser()">Stop</button>
                     <button onclick="resetPulser()">Reset</button>
-                    <button onclick="loadBitstream()">Load Bitstream</button>
+                    <button onclick="loadBitstream()">Reload Bitstream</button>
                 </div>
             </div>
 
             <div class="section">
                 <h2>Set Period</h2>
                 <div class="input-row">
-                    <input type="number" id="periodTicks" placeholder="Ticks">
-                    <button onclick="setPeriod()">Set Period</button>
+
+                    <input
+                        type="number"
+                        id="periodValue"
+                        placeholder="Period"
+                        step="any"
+                    >
+
+                    <select id="periodUnit">
+                        <option value="1">s</option>
+                        <option value="1e-3">ms</option>
+                        <option value="1e-6" selected>µs</option>
+                        <option value="1e-9">ns</option>
+                    </select>
+
+                    <button onclick="setPeriod()">
+                        Set Period
+                    </button>
                 </div>
+                <div id="periodQuantizationInfo"></div>
             </div>
 
             <div class="section">
@@ -48,10 +65,35 @@
                 <div class="input-row">
                     <input type="number" id="outputIdx" placeholder="Output" min="1" step="1">
                     <input type="number" id="pulseIdx" placeholder="Pulse" min="0" step="1">
-                    <input type="number" id="startTick" placeholder="Start" min="0" step="1">
-                    <input type="number" id="stopTick" placeholder="Stop" min="1" step="1">
+                    
+                    <div class="timing-input-group">
+                        <input
+                            type="number"
+                            id="startTime"
+                            placeholder="Start"
+                            step="any"
+                        >
+
+                        <input
+                            type="number"
+                            id="stopTime"
+                            placeholder="Stop"
+                            step="any"
+                        >
+
+                        <select id="timeUnit">
+                            <option value="1">s</option>
+                            <option value="1e-3">ms</option>
+                            <option value="1e-6" selected>µs</option>
+                            <option value="1e-9">ns</option>
+                        </select>
+
+                    </div>
+
+                    
                     <button onclick="setPulse()">Set Pulse</button>
                     <button onclick="clearOutputs()">Clear All Outputs</button>
+                    <div id="pulseQuantizationInfo"></div>
                 </div>
             </div>
 

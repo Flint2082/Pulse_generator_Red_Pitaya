@@ -23,7 +23,7 @@ class FPGAInterface:
             )
             
     def load_bitstream(self):
-        print(f"Loading bitstream from {self.BITSTREAM_PATH}...")
+        print(f"INFO: Loading bitstream from {self.BITSTREAM_PATH}...")
         try:
             result = subprocess.run(
                 ["/opt/redpitaya/bin/fpgautil", "-b", self.BITSTREAM_PATH],
@@ -33,10 +33,13 @@ class FPGAInterface:
             )
 
             if result.returncode != 0:
+                print(f"ERROR: Failed to load bitstream: {result.stderr}")
                 return {"status": "error", "stderr": result.stderr}
+            print(f"INFO: Bitstream loaded successfully: {result.stdout}")
             return {"status": "success", "stdout": result.stdout}
 
         except Exception as e:
+            print(f"ERROR: Failed to load bitstream: {e}")
             return {"status": "error","message": str(e)} 
             
 
