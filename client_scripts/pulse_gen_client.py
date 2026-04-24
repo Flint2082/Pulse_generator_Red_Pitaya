@@ -18,6 +18,8 @@ class PulseGenClient:
         
         self.session = requests.Session()
         
+        self.load_bitstream()
+        
         # Enable detailed logging if debug mode is on
         if self.debug:
             http.client.HTTPConnection.debuglevel = 1
@@ -55,10 +57,16 @@ class PulseGenClient:
     def system_info(self):
         return self._get("/api/get_system_info")
     
+    def get_cycle_config(self):
+        return self._get("/api/get_cycle_config")
+    
     def get_pulse_config(self):
         return self._get("/api/get_pulse_config")
     
     # POST endpoints 
+    
+    def load_bitstream(self):
+        return self._post("/api/load_bitstream")
 
     def start(self):
         return self._post("/api/start")
@@ -76,6 +84,12 @@ class PulseGenClient:
         return self._post(
             "/api/set_period",
             {"period_length_ticks": period_length_ticks}
+        )
+    
+    def set_cycle_limit(self, max_cycles: int, enabled: bool):
+        return self._post(
+            "/api/set_cycle_limit",
+            {"max_cycles": max_cycles, "enabled": enabled}
         )
 
     def set_pulse(

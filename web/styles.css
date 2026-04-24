@@ -1,0 +1,223 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #e0e0e0;
+    height: 100vh;
+    overflow: hidden;
+    padding: 16px;
+}
+
+h1 {
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    gap: 16px;
+}
+
+.top-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 16px;
+    min-height: 0;
+}
+
+.panel {
+    background: #d4d4d4;
+    border: 2px solid #7a7a7a;
+    border-radius: 1px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section {
+    background: #ececec;
+    border-radius: 3px;
+    padding: 12px;
+}
+
+.section h2 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #222;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 3px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.input-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+input {
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 70px;
+}
+
+input:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.output-card {
+    background: white;
+    border-radius: 3px;
+    padding: 12px;
+    border: 1px solid #bbb;
+}
+
+.output-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.output-value {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #111;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.plot-panel {
+    flex: 1;
+    background: #d4d4d4;
+    border: 2px solid #7a7a7a;
+    border-radius: 1px;
+    padding: 12px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#pulsePlot {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+}
+
+.output-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.output-row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.value {
+    font-weight: bold;
+    color: #111;
+}
+
+
+
+/* Status indicator */
+.status-indicator {
+    text-align: center;
+    padding: 10px;
+    border-radius: 3px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Status colors */
+.status-running {
+    background: #16a34a;
+}
+
+.status-stopped {
+    background: #dc2626;
+}
+
+.status-idle {
+    background: #6b7280;
+}
+
+.log-panel {
+    height: 400px;
+    overflow-y: auto;
+    background: #111;
+    color: #eee;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 3px;
+}
+
+.log-line {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.log-info { color: #9cdcfe; }
+.log-warn { color: #f9e79f; }
+.log-error { color: #ff6b6b; }
+.log-debug { color: #6a9955; }
+
+.timing-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.timing-input-group input {
+    width: 120px;
+}
+
+.timing-input-group select {
+    width: 80px;
+}
+
+#pulseQuantizationInfo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+#periodQuantizationInfo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #444;
+}

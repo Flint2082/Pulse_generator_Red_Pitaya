@@ -4,248 +4,186 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Red Pitaya Pulse Generator GUI</title>
+
+<!-- Link to external CSS for styling -->
+<link rel="stylesheet" href="styles.css">
+
+<!-- Load Plotly from CDN for plotting pulse trains -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        background-color: #e0e0e0;
-    }
 
-    h1 { color: #333; }
+<!-- Link to external JavaScript for functionality -->
+<script src="script.js" defer></script>
 
-    button {
-        margin: 5px;
-        width: 120px;
-        padding: 8px 15px;
-    }
-
-    input {
-        margin: 5px;
-        width: 80px;
-    }
-
-    .section {
-        border: 3px solid #7a7a7a;
-        padding: 15px;
-        margin-bottom: 20px;
-        background-color: #d4d4d4;
-    }
-
-    .inline-section {
-        display: inline-block;
-        width: 40%;
-        vertical-align: top;
-    }
-
-    pre {
-        background-color: #eee;
-        padding: 10px;
-    }
-</style>
 </head>
 <body>
 
-<h1>Red Pitaya Pulse Generator GUI</h1>
+<h1>Pulse Generator GUI</h1>
 
-<div class="section inline-section">
-    <h2>System Info</h2>
-    <button onclick="getSystemInfo()">Refresh</button>
-    <pre id="systemInfo">Click "Refresh" to load system info...</pre>
+<div class="app">
+
+    <div class="top-row">
+        <!-- INPUTS COLUMN -->
+        <div class="panel" >
+
+            <div class="section">
+                <h2>Control</h2>
+                <div class="button-row">
+                    <button onclick="startPulser()">Start</button>
+                    <button onclick="stopPulser()">Stop</button>
+                    <button onclick="resetPulser()">Reset</button>
+                    <button onclick="loadBitstream()">Reload Bitstream</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Set Period</h2>
+                <div class="input-row">
+
+                    <input
+                        type="number"
+                        id="periodValue"
+                        placeholder="Period"
+                        step="any"
+                    >
+
+                    <select id="periodUnit">
+                        <option value="1">s</option>
+                        <option value="1e-3">ms</option>
+                        <option value="1e-6" selected>µs</option>
+                        <option value="1e-9">ns</option>
+                    </select>
+
+                    <button onclick="setPeriod()">
+                        Set Period
+                    </button>
+                </div>
+                <div id="periodQuantizationInfo"></div>
+            </div>
+
+            <div class="section">
+                <h2>Set Pulse</h2>
+                <div class="input-row">
+                    <input type="number" id="outputIdx" placeholder="Output" min="1" step="1">
+                    <input type="number" id="pulseIdx" placeholder="Pulse" min="0" step="1">
+                    
+                    <div class="timing-input-group">
+                        <input
+                            type="number"
+                            id="startTime"
+                            placeholder="Start"
+                            step="any"
+                        >
+
+                        <input
+                            type="number"
+                            id="stopTime"
+                            placeholder="Stop"
+                            step="any"
+                        >
+
+                        <select id="timeUnit">
+                            <option value="1">s</option>
+                            <option value="1e-3">ms</option>
+                            <option value="1e-6" selected>µs</option>
+                            <option value="1e-9">ns</option>
+                        </select>
+
+                    </div>
+
+                    
+                    <button onclick="setPulse()">Set Pulse</button>
+                    <button onclick="clearOutputs()">Clear All Outputs</button>
+                    <div id="pulseQuantizationInfo"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Cycle Limit</h2>
+
+                <form id="cycleForm" onsubmit="handleCycleSubmit(event)">
+                    <div class="input-row">
+                        <input type="number" id="maxCycleCount" placeholder="Cycles" min="1" step="1"  >
+                        <button onclick="updateCycleLimit()" id="cycleLimitEnabled">Enable Limit</button>
+                    </div>
+                </form>
+            </div>
+            <div class="section">
+                <h2>Pulse Config (CSV)</h2>
+
+                <input type="file" id="csvFile" accept=".csv" style="width: 50%"">
+                <button onclick="uploadCSV()">Upload</button>
+
+                <button onclick="downloadCSV()">Download Current</button>
+            </div>
+
+        </div>
+
+                <!-- OUTPUTS COLUMN -->
+        <div class="panel">
+
+            <div class="section">
+                <h2>System Info</h2>
+                <div class="output-card" id="systemInfo">
+                    <div class="output-row">
+                        <span class="label">FPGA File</span>
+                        <span class="value" id="fpgaFile">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Clock</span>
+                        <span class="value" id="clockFreq">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Outputs</span>
+                        <span class="value" id="numOutputs">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Max Pulses</span>
+                        <span class="value" id="maxPulses">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Period</span>
+                        <span class="value" id="period">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Cycle count</span>
+                        <span class="value" id="cycleCount">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Cycle limit</span>
+                        <span class="value" id="cycleLimit">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Status</h2>
+                <div class="output-card">
+                    <div class="status-indicator" id="statusIndicator">UNKNOWN</div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <!-- LOGS COLUMN -->
+
+        <div class="panel">
+            <div class="section">
+                <h2>Logs</h2>
+                <button onclick="toggleLogs()" id="logToggleBtn" style="margin-bottom: 10px">Pause</button>
+                <div id="logPanel" class="log-panel"></div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM PLOT -->
+    <div class="plot-panel" style="margin-bottom:20px">
+        <div id="pulsePlot"></div>
+    </div>
+
 </div>
-
-<div class="section inline-section">
-    <h2>Status</h2>
-    <button onclick="getStatus()">Refresh</button>
-    <pre id="statusInfo">Click "Refresh" to see status...</pre>
-</div>
-
-<div class="section">
-    <h2>Cycle Count</h2>
-    <pre id="cycleCount">Loading...</pre>
-</div>
-
-
-<div class="section">
-    <h2>Control</h2>
-    <button onclick="startPulser()">Start</button>
-    <button onclick="stopPulser()">Stop</button>
-    <button onclick="resetPulser()">Reset</button>
-    <button onclick="clearOutputs()">Clear Outputs</button>
-</div>
-
-<div class="section">
-    <h2>Set Period</h2>
-    <input type="number" id="periodTicks" placeholder="Ticks">
-    <button onclick="setPeriod()">Set Period</button>
-</div>
-
-<div class="section">
-    <h2>Set Pulse</h2>
-    <input type="number" id="outputIdx" placeholder="Output idx">
-    <input type="number" id="pulseIdx" placeholder="Pulse idx">
-    <input type="number" id="startTick" placeholder="Start">
-    <input type="number" id="stopTick" placeholder="Stop">
-    <button onclick="setPulse()">Set Pulse</button>
-</div>
-
-<div class="section">
-    <h2>Pulse Train Visualization</h2>
-    <div id="pulsePlot" style="width:100%;height:500px;"></div>
-</div>
-
-<script>
-// Automatically support both local Live Server and Red Pitaya hosting.
-// If running on localhost/127.0.0.1, target RP manually.
-const API_BASE = (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-)
-    ? 'http://rp-f0f587.local:8000/api'
-    : '/api';
-
-async function apiFetch(path, options = {}) {
-    const res = await fetch(`${API_BASE}${path}`, options);
-
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || `HTTP ${res.status}`);
-    }
-
-    return res.json();
-}
-
-async function getSystemInfo() {
-    const data = await apiFetch('/get_system_info');
-    document.getElementById('systemInfo').textContent = JSON.stringify(data, null, 2);
-    return data;
-}
-
-async function getStatus() {
-    const data = await apiFetch('/get_status');
-    document.getElementById('statusInfo').textContent = JSON.stringify(data, null, 2);
-    return data;
-}
-
-async function getPulseData() {
-    const data = await apiFetch('/get_pulse_config');
-    return data.pulse_data;
-}
-
-async function getCycleCount() {
-    const data = await apiFetch('/get_cycle_count');
-    document.getElementById('cycleCount').textContent = `Cycle Count: ${data.cycle_count}`;
-    return data.cycle_count;
-}
-
-async function refreshPlot() {
-    try {
-        const systemInfo = await getSystemInfo();
-        const pulseData = await getPulseData();
-        const cycleCount = await getCycleCount();
-        plotPulseTrain(pulseData, systemInfo.fpga_clock_freq);
-    } catch (err) {
-        console.error('Plot refresh failed:', err);
-    }
-}
-
-function plotPulseTrain(pulseData, clockSpeedHz) {
-    const traces = [];
-
-    let maxTick = 0;
-
-    period_length_ticks = pulseData[0][0][1] || 1; // Get period length from pulse data
-
-    for (const [outputIdx, pulses] of Object.entries(pulseData)) {
-        if (outputIdx == 0) continue; // Skip period length entry
-        const numericOutput = Number(outputIdx);
-        const x = [];
-        const y = [];
-
-        pulses.forEach(([start, stop]) => {
-            x.push(start / clockSpeedHz, stop / clockSpeedHz, null);
-            y.push(numericOutput, numericOutput, null);
-        });
-
-        traces.push({
-            x,
-            y,
-            mode: 'lines',
-            line: { width: 100 },
-            name: `Output ${outputIdx}`
-        });
-    }
-
-    const layout = {
-        autosize: true,
-        paper_bgcolor: '#d4d4d4',
-        plot_bgcolor: '#f0f0f0',
-        xaxis: {
-            title: 'Time (s)',
-            range: [0, period_length_ticks / clockSpeedHz]
-        },
-        yaxis: {
-            title: 'Output',
-            fixedrange: true,
-            range: [0.5, Object.keys(pulseData).length - 0.5]
-        },
-        showlegend: false,
-        height: 500
-    };
-
-    Plotly.react('pulsePlot', traces, layout);
-}
-
-async function startPulser() {
-    await apiFetch('/start', { method: 'POST' });
-}
-
-async function stopPulser() {
-    await apiFetch('/stop', { method: 'POST' });
-}
-
-async function resetPulser() {
-    await apiFetch('/reset', { method: 'POST' });
-}
-
-async function clearOutputs() {
-    await apiFetch('/clear_outputs', { method: 'POST' });
-}
-
-async function setPeriod() {
-    const ticks = parseInt(document.getElementById('periodTicks').value);
-    if (isNaN(ticks)) return alert('Enter a valid number for ticks');
-
-    await apiFetch('/set_period', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period_length_ticks: ticks })
-    });
-}
-
-async function setPulse() {
-    const output_idx = parseInt(document.getElementById('outputIdx').value);
-    const pulse_idx = parseInt(document.getElementById('pulseIdx').value);
-    const start = parseInt(document.getElementById('startTick').value);
-    const stop = parseInt(document.getElementById('stopTick').value);
-
-    if ([output_idx, pulse_idx, start, stop].some(isNaN)) {
-        return alert('Fill all fields correctly');
-    }
-
-    await apiFetch('/set_pulse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ output_idx, pulse_idx, start, stop })
-    });
-}
-
-setInterval(refreshPlot, 2000); // Refresh plot every 2 seconds
-
-setInterval(getCycleCount, 100); // Update cycle count more frequently for responsiveness
-
-
-</script>
 
 </body>
 </html>
