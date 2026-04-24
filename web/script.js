@@ -50,6 +50,8 @@ async function getLogs() {
 async function getSystemInfo() {
     const data = await apiFetch('/get_system_info');
 
+    window._clockFrequencyHz = data.fpga_clock_freq;
+
     document.getElementById('fpgaFile').textContent = data.fpg_file;
     document.getElementById('clockFreq').textContent =
         (data.fpga_clock_freq / 1e6).toFixed(0) + ' MHz';
@@ -84,6 +86,7 @@ async function getStatus() {
 
 async function getPulseData() {
     const data = await apiFetch('/get_pulse_config');
+    document.getElementById('period').textContent = data.period + ' ticks';
     return data.pulse_data;
 }
 
@@ -110,60 +113,109 @@ function updateInputLimits(systemInfo) {
 // ==========================
 
 async function handleCycleSubmit(event) {
-    event.preventDefault(); // prevent page reload
+    event.preventDefault();
 
-    const enabled = document.getElementById('cycleLimitEnabled').checked;
-
-    await setCycleLimit(enabled);
+    await updateCycleLimit();
 }
 
 
-async function setCycleLimit(enabled) {
+async function updateCycleLimit() {
+
     const input = document.getElementById('maxCycleCount');
+    const button = document.getElementById('cycleLimitEnabled');
+
+    const currentlyEnabled =
+        button.textContent.includes('Disable');
+
+    const newEnabledState = !currentlyEnabled;
+
+    const maxCycles = parseInt(input.value);
 
     try {
+
         await apiFetch('/set_cycle_limit', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled: enabled, max_cycles: parseInt(input.value) || 0 })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+                enabled: newEnabledState,
+                max_cycles: isNaN(maxCycles)
+                    ? 0
+                    : maxCycles
+            })
         });
 
-        input.disabled = !enabled;
-
-        if (enabled) {
-            input.focus();
-        }
+        await refreshCycleLimitUI();
 
     } catch (err) {
-        console.error('Failed to toggle cycle limit:', err);
-        alert('Failed to toggle cycle limit');
 
-        // revert checkbox on failure
-        document.getElementById('cycleLimitEnabled').checked = !enabled;
+        console.error('Failed to update cycle limit:', err);
+
+        alert(
+            err.message ||
+            'Failed to update cycle limit'
+        );
     }
 }
 
-async function getCycleLimit() {
+
+async function refreshCycleLimitUI() {
     try {
-        const data = await apiFetch('/get_cycle_limit');
+        const data = await apiFetch('/get_cycle_config');
 
-        const checkbox = document.getElementById('cycleLimitEnabled');
+        const button = document.getElementById('cycleLimitEnabled');
         const input = document.getElementById('maxCycleCount');
+        const limitDisplay = document.getElementById('cycleLimit');
 
-        checkbox.checked = data.enabled;
-        input.disabled = !data.enabled;
+        const enabled = data.enabled;
 
-        if (data.enabled && data.max_cycles !== null) {
+        // --------------------------
+        // button state
+        // --------------------------
+
+        button.textContent =
+            enabled
+                ? 'Disable Limit'
+                : 'Enable Limit';
+
+
+        // --------------------------
+        // displayed value
+        // --------------------------
+        if (!enabled) {
+
+            limitDisplay.textContent = 'Disabled';
+        } else if (
+            data.max_cycles !== null &&
+            data.max_cycles !== undefined
+        ) {
+
             input.value = data.max_cycles;
+
+            limitDisplay.textContent =
+                data.max_cycles.toLocaleString();
+
         } else {
-            input.value = '';
+
+            limitDisplay.textContent = '-';
         }
 
     } catch (err) {
-        console.error('Failed to sync cycle limit:', err);
+
+        console.error(
+            'Failed to refresh cycle limit UI:',
+            err
+        );
     }
 }
 
+
+async function toggleCycleLimit() {
+
+    await updateCycleLimit();
+}
 
 
 // ==========================
@@ -311,8 +363,10 @@ function updateLogPanel(logs) {
 
         if (line.includes('ERROR')) {
             div.classList.add('log-error');
-        } else if (line.includes('WARN')) {
+        } else if (!line.includes('INFO') && !line.includes('DEBUG')) {
             div.classList.add('log-warn');
+        } else if (line.includes('DEBUG')) {
+            div.classList.add('log-debug');
         } else {
             div.classList.add('log-info');
         }
@@ -413,6 +467,8 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
     const period_ticks = pulseData[0][0][1];
     const period = period_ticks / clockSpeedHz;
+
+    document.getElementById('period').textContent = period + ' s';
 
     for (const [outputIdx, pulses] of Object.entries(pulseData)) {
         if (outputIdx == 0) continue;
@@ -569,7 +625,7 @@ async function refresh() {
     await getCycleCount();
     await getLogs();
     await refreshPlot();
-    await syncCycleLimit();
+    await refreshCycleLimitUI();
 }
 
 async function setPeriod() {
@@ -586,43 +642,144 @@ async function setPeriod() {
 }
 
 async function setPulse() {
-    const output_idx = parseInt(document.getElementById('outputIdx').value);
-    const pulse_idx = parseInt(document.getElementById('pulseIdx').value);
-    const start = parseInt(document.getElementById('startTick').value);
-    const stop = parseInt(document.getElementById('stopTick').value);
 
-    const maxOutputs = parseInt(document.getElementById('numOutputs').textContent);
-    const maxPulses = parseInt(document.getElementById('maxPulses').textContent);
-    const period = window._plotPeriodTicks;
+    const output_idx = parseInt(
+        document.getElementById('outputIdx').value
+    );
 
-    // ---- VALIDATION ----
+    const pulse_idx = parseInt(
+        document.getElementById('pulseIdx').value
+    );
 
-    if ([output_idx, pulse_idx, start, stop].some(isNaN)) {
+    // ---------------------------------
+    // INPUT VALUES (seconds)
+    // ---------------------------------
+
+    const startSeconds = parseFloat(
+        document.getElementById('startTick').value
+    );
+
+    const stopSeconds = parseFloat(
+        document.getElementById('stopTick').value
+    );
+
+    // ---------------------------------
+    // SYSTEM INFO
+    // ---------------------------------
+
+    const maxOutputs = parseInt(
+        document.getElementById('numOutputs').textContent
+    );
+
+    const maxPulses = parseInt(
+        document.getElementById('maxPulses').textContent
+    );
+
+    const periodTicks = window._plotPeriodTicks;
+
+    const clockHz = window._clockFrequencyHz;
+
+    if (!clockHz) {
+        return alert('Clock frequency unavailable');
+    }
+
+    // ---------------------------------
+    // CONVERT SECONDS -> TICKS
+    // ---------------------------------
+
+    // round to nearest FPGA clock cycle
+
+    const start = Math.round(
+        startSeconds * clockHz
+    );
+
+    const stop = Math.round(
+        stopSeconds * clockHz
+    );
+
+    // actual quantized values
+
+    const quantizedStartSeconds =
+        start / clockHz;
+
+    const quantizedStopSeconds =
+        stop / clockHz;
+
+    // ---------------------------------
+    // VALIDATION
+    // ---------------------------------
+
+    if (
+        [
+            output_idx,
+            pulse_idx,
+            startSeconds,
+            stopSeconds
+        ].some(isNaN)
+    ) {
         return alert('Fill all fields correctly');
     }
 
-    if (output_idx < 1 || output_idx > maxOutputs) {
-        return alert(`Output must be between 1 and ${maxOutputs}`);
+    if (
+        output_idx < 1 ||
+        output_idx > maxOutputs
+    ) {
+        return alert(
+            `Output must be between 1 and ${maxOutputs}`
+        );
     }
 
-    if (pulse_idx < 0 || pulse_idx >= maxPulses) {
-        return alert(`Pulse index must be 0–${maxPulses - 1}`);
+    if (
+        pulse_idx < 0 ||
+        pulse_idx >= maxPulses
+    ) {
+        return alert(
+            `Pulse index must be 0–${maxPulses - 1}`
+        );
     }
 
-    if (start < 0 || stop < start) {
-        return alert('Stop must be greater than start');
+    if (
+        start < 0 ||
+        stop <= start
+    ) {
+        return alert(
+            'Stop must be greater than start'
+        );
     }
 
-    if (stop > period) {
-        return alert(`Stop exceeds period (${period} ticks)`);
+    if (stop > periodTicks) {
+        return alert(
+            `Stop exceeds period (${periodTicks} ticks)`
+        );
     }
 
-    // ---- SEND ----
+    // ---------------------------------
+    // OPTIONAL USER FEEDBACK
+    // ---------------------------------
+
+    console.log(
+        `Quantized pulse:
+        start = ${quantizedStartSeconds}s (${start} ticks)
+        stop  = ${quantizedStopSeconds}s (${stop} ticks)`
+    );
+
+    // ---------------------------------
+    // SEND
+    // ---------------------------------
 
     await apiFetch('/set_pulse', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ output_idx, pulse_idx, start, stop })
+
+        headers: {
+            'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+            output_idx,
+            pulse_idx,
+            start,
+            stop
+        })
     });
 
     await refreshPlot();

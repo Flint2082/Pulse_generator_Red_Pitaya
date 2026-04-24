@@ -60,20 +60,8 @@
 
                 <form id="cycleForm" onsubmit="handleCycleSubmit(event)">
                     <div class="input-row">
-                        <input 
-                            type="checkbox" 
-                            id="cycleLimitEnabled" 
-                            onchange="toggleCycleLimit(this.checked)"
-                        >
-
-                        <input 
-                            type="number" 
-                            id="maxCycleCount" 
-                            placeholder="Cycles"
-                            min="1"
-                            step="1"
-                            disabled
-                        >
+                        <input type="number" id="maxCycleCount" placeholder="Cycles" min="1" step="1"  >
+                        <button onclick="updateCycleLimit()" id="cycleLimitEnabled">Enable Limit</button>
                     </div>
                 </form>
             </div>
@@ -111,8 +99,16 @@
                         <span class="value" id="maxPulses">--</span>
                     </div>
                     <div class="output-row">
+                        <span class="label">Period</span>
+                        <span class="value" id="period">--</span>
+                    </div>
+                    <div class="output-row">
                         <span class="label">Cycle count</span>
                         <span class="value" id="cycleCount">--</span>
+                    </div>
+                    <div class="output-row">
+                        <span class="label">Cycle limit</span>
+                        <span class="value" id="cycleLimit">--</span>
                     </div>
                 </div>
             </div>

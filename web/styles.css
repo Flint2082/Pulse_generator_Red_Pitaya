@@ -194,3 +194,4 @@ input:disabled {
 .log-info { color: #9cdcfe; }
 .log-warn { color: #f9e79f; }
 .log-error { color: #ff6b6b; }
+.log-debug { color: #6a9955; }
