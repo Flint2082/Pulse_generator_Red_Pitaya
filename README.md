@@ -1,8 +1,44 @@
-# Auto-Start Pulse Generator API and Startup Script on Red Pitaya
+# Red Pitaya Pulse Generator 
+A browser-controlled pulse generator for the Red Pitaya platform.  
+The system provides deterministic FPGA-timed pulse generation for laboratory and optics experiments through a FastAPI backend and web GUI.
 
-Configure the Red Pitaya to run both the API server and `tools/startup_rp.sh` automatically on boot.
+## Features
 
-## 1. Create Service File
+- FPGA-timed pulse generation
+- 3 configurable output channels
+- Browser-based control GUI
+- CSV import/export of pulse configurations
+- Python client library for scripting and automation
+
+## Architecture
+
+The project consists of three layers:
+
+1. FPGA bitstream
+   - Generates deterministic output timing
+
+2. Python backend (FastAPI)
+   - Controls FPGA registers
+   - Exposes REST API endpoints
+
+3. Browser GUI
+   - Provides visualization and control interface
+   - Displays pulse timing and system state
+
+## Quick Start
+1. Power on your Red Pitaya 
+2. Connect your computer to the red pitaya network (e.g. via Ethernet)
+3. Access the web GUI at `http://rp-f0XXXX.local:8000` (replace `XXXX' with the last 4 digits of your Red Pitaya's MAC address)
+4. Use the GUI to configure pulse parameters and start/stop the generator
+
+
+<br>
+
+## SETUP INSTRUCTIONS
+Instructions for setting up your new Red Pitaya.
+
+
+### 1. Create Service File
 
 ```bash
 sudo nano /etc/systemd/system/pulsegen.service
@@ -21,7 +57,6 @@ Type=simple
 User=root
 WorkingDirectory=/root/Pulse_generator_Red_Pitaya
 
-ExecStartPre=/bin/bash /root/Pulse_generator_Red_Pitaya/tools/startup_rp.sh
 ExecStart=/root/Pulse_generator_Red_Pitaya/.venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8000
 
 Restart=always
@@ -31,7 +66,7 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-## 2. Enable and Start Service
+### 2. Enable and Start Service
 
 ```bash
 sudo systemctl daemon-reload
@@ -39,7 +74,7 @@ sudo systemctl enable pulsegen.service
 sudo systemctl start pulsegen.service
 ```
 
-## 3. Useful Commands
+### 3. Useful Commands
 
 Check status:
 
@@ -59,9 +94,3 @@ Stop service:
 sudo systemctl stop pulsegen.service
 ```
 
-## Result
-
-On boot, the Red Pitaya will:
-
-1. Run `tools/startup_rp.sh`
-2. Start the Pulse Generator API server
