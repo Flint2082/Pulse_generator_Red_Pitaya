@@ -497,7 +497,8 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         return;
     }
 
-    const AMPLITUDE = 0.3;
+    const AMPLITUDE = 0.25;
+    const LABEL_OFFSET = 0.12;
 
     const traces = [];
     const annotations = [];
@@ -529,7 +530,7 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
                 annotations.push({
                     x: mid,
-                    y: numericOutput - AMPLITUDE * 1.2,
+                    y: numericOutput - AMPLITUDE - LABEL_OFFSET,
                     text: `${(duration * 1e6).toFixed(3)} µs`,
                     showarrow: false,
                     font: { size: 12, color: 'black' }
@@ -550,7 +551,7 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
             annotations.push({
                 x: midHigh,
-                y: numericOutput + AMPLITUDE * 1.2,
+                y: numericOutput + AMPLITUDE + LABEL_OFFSET,
                 text: formatTime(highDuration),
                 showarrow: false,
                 font: { size: 12, color: 'black' }
@@ -657,8 +658,8 @@ async function clearOutputs() {
 async function refresh() {
     await getSystemInfo();
     await getStatus();
-    await getCycleCount();
-    await getLogs();
+    await safeGetCycleCount();
+    await safeGetLogs();
     await getPulseData();
     await refreshPlot();
     await refreshCycleLimitUI();
@@ -726,7 +727,7 @@ async function setPeriod() {
 
         Actual Period:
         ${(quantizedSeconds * 1e6).toFixed(3)}
-        µs<br>
+        µs
 
         Clock Ticks:
         ${ticks.toLocaleString()}
@@ -888,14 +889,14 @@ async function setPulse() {
     info.innerHTML = `
         FPGA Quantization:<br>
         Start: ${(quantizedStart * 1e6).toFixed(3)} µs
-        (${start} ticks)<br>
+        (${start} ticks)
 
         Stop: ${(quantizedStop * 1e6).toFixed(3)} µs
-        (${stop} ticks)<br>
+        (${stop} ticks)
 
         Width:
-        ${((quantizedStop - quantizedStart) * 1e6).toFixed(3)}
-        µs
+        ${((quantizedStop - quantizedStart) * 1e6).toFixed(3)} µs
+        (${stop - start} ticks)
     `;
 
     // ---------------------------------
