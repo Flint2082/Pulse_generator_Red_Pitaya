@@ -111,7 +111,7 @@ class PulseGenClient:
 
         print("\n=== SYSTEM INFO ===")
         print(f"FPGA file          : {data.get('fpg_file')}")
-        print(f"Clock frequency    : {data.get('fpga_clock_freq'):,} Hz")
+        print(f"Clock frequency    : {data.get('fpga_clock_freq'):,} Hz ({self.ticks_to_time(1, 'ns'):.1f} ns per tick)")
         print(f"Number of outputs  : {data.get('num_outputs')}")
         print(f"Max pulses/output  : {data.get('max_pulses_per_output')}")
 

@@ -26,6 +26,13 @@ pg.set_pulse_train(
     ]
 )
 
+pg.set_pulse(
+    output_idx=3,
+    pulse_idx=0,
+    start=pg.time_to_ticks(0.0, "us"),
+    stop=pg.time_to_ticks(0.5, "us")
+)
+
 # print(pg.set_from_file("timing_settings/worst_case.csv"))
 
 pg.set_cycle_limit(max_cycles=1000000, enabled=True)
