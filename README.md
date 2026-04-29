@@ -32,7 +32,7 @@ The project consists of three layers:
 4. Use the GUI to configure pulse parameters and start/stop the generator
 
 
-<br>
+<!-- <br>
 
 ## SETUP INSTRUCTIONS
 Instructions for setting up your new Red Pitaya.
@@ -92,5 +92,5 @@ Stop service:
 
 ```bash
 sudo systemctl stop pulsegen.service
-```
+``` -->
 
