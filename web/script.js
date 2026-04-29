@@ -531,7 +531,7 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
                 annotations.push({
                     x: mid,
                     y: numericOutput - AMPLITUDE - LABEL_OFFSET,
-                    text: `${(duration * 1e6).toFixed(3)} µs`,
+                    text: formatTime(duration),
                     showarrow: false,
                     font: { size: 12, color: 'black' }
                 });
@@ -571,7 +571,7 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
             annotations.push({
                 x: mid,
-                y: numericOutput - AMPLITUDE * 1.2,
+                y: numericOutput - AMPLITUDE - LABEL_OFFSET,
                 text: formatTime(duration),
                 showarrow: false,
                 font: { size: 12, color: 'black' }
