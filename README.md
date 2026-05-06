@@ -26,19 +26,30 @@ The project consists of three layers:
    - Displays pulse timing and system state
 
 ## Quick Start
+Assumes your Red Pitaya is already set up and running
 1. Power on your Red Pitaya 
 2. Connect your computer to the red pitaya network (e.g. via Ethernet)
 3. Access the web GUI at `http://rp-f0XXXX.local:8000` (replace `XXXX' with the last 4 digits of your Red Pitaya's MAC address)
 4. Use the GUI to configure pulse parameters and start/stop the generator
 
 
-<!-- <br>
+<br>
 
-## SETUP INSTRUCTIONS
+# Fresh Setup
 Instructions for setting up your new Red Pitaya.
 
+### 1. Clone repository and install dependencies
 
-### 1. Create Service File
+```bash
+git clone https://github.com/Flint2082/Pulse_generator_Red_Pitaya.git
+cd Pulse_generator_Red_Pitaya
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Create Service File
 
 ```bash
 sudo nano /etc/systemd/system/pulsegen.service
@@ -55,7 +66,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/Pulse_generator_Red_Pitaya
+WorkingDirectory=/root/Pulse_generator_Red_Pitaya/src/
 
 ExecStart=/root/Pulse_generator_Red_Pitaya/.venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8000
 
@@ -92,5 +103,5 @@ Stop service:
 
 ```bash
 sudo systemctl stop pulsegen.service
-``` -->
+``` 
 
