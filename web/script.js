@@ -84,9 +84,22 @@ async function getStatus() {
     return data;
 }
 
-async function getPulseData() {
+async function  getPulseData() {
     const data = await apiFetch('/get_pulse_config');
-    document.getElementById('period').textContent = data.period + ' ticks';
+    const periodTicks = data.pulse_data[0][0][1];
+    const clockHz = window._clockFrequencyHz;
+
+    if (clockHz) {
+        const seconds =
+            periodTicks / clockHz;
+
+        document.getElementById('period').textContent =
+            formatTime(seconds);
+    } else {
+        document.getElementById('period').textContent =
+            `${periodTicks} ticks`;
+    }
+    
     return data.pulse_data;
 }
 
@@ -106,6 +119,23 @@ async function getCycleCount() {
 function updateInputLimits(systemInfo) {
     document.getElementById('outputIdx').max = systemInfo.num_outputs;
     document.getElementById('pulseIdx').max = systemInfo.max_pulses_per_output - 1;
+}
+
+function formatTime(seconds) {
+
+    if (seconds >= 1) {
+        return `${seconds.toFixed(3)} s`;
+    }
+
+    if (seconds >= 1e-3) {
+        return `${(seconds * 1e3).toFixed(3)} ms`;
+    }
+
+    if (seconds >= 1e-6) {
+        return `${(seconds * 1e6).toFixed(3)} µs`;
+    }
+
+    return `${(seconds * 1e9).toFixed(3)} ns`;
 }
 
 // ==========================
@@ -438,7 +468,6 @@ async function refreshPlot() {
     try {
         const systemInfo = await getSystemInfo();
         const pulseData = await getPulseData();
-        await getCycleCount();
 
         plotPulseTrain(pulseData, systemInfo.fpga_clock_freq);
 
@@ -450,6 +479,14 @@ async function refreshPlot() {
     }
 }
 
+const plotDiv = document.getElementById('pulsePlot');
+
+const resizeObserver = new ResizeObserver(() => {
+    Plotly.Plots.resize(plotDiv);
+});
+
+resizeObserver.observe(plotDiv);
+
 // ==========================
 // PLOTTING
 // ==========================
@@ -460,15 +497,14 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
         return;
     }
 
-    const AMPLITUDE = 0.3;
+    const AMPLITUDE = 0.25;
+    const LABEL_OFFSET = 0.12;
 
     const traces = [];
     const annotations = [];
 
     const period_ticks = pulseData[0][0][1];
     const period = period_ticks / clockSpeedHz;
-
-    document.getElementById('period').textContent = period + ' s';
 
     for (const [outputIdx, pulses] of Object.entries(pulseData)) {
         if (outputIdx == 0) continue;
@@ -494,8 +530,8 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
                 annotations.push({
                     x: mid,
-                    y: numericOutput - AMPLITUDE * 1.2,
-                    text: `${(duration * 1e6).toFixed(3)} µs`,
+                    y: numericOutput - AMPLITUDE - LABEL_OFFSET,
+                    text: formatTime(duration),
                     showarrow: false,
                     font: { size: 12, color: 'black' }
                 });
@@ -515,8 +551,8 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
             annotations.push({
                 x: midHigh,
-                y: numericOutput + AMPLITUDE * 1.2,
-                text: `${(highDuration * 1e6).toFixed(3)} µs`,
+                y: numericOutput + AMPLITUDE + LABEL_OFFSET,
+                text: formatTime(highDuration),
                 showarrow: false,
                 font: { size: 12, color: 'black' }
             });
@@ -535,8 +571,8 @@ function plotPulseTrain(pulseData, clockSpeedHz) {
 
             annotations.push({
                 x: mid,
-                y: numericOutput - AMPLITUDE * 1.2,
-                text: `${(duration * 1e6).toFixed(3)} µs`,
+                y: numericOutput - AMPLITUDE - LABEL_OFFSET,
+                text: formatTime(duration),
                 showarrow: false,
                 font: { size: 12, color: 'black' }
             });
@@ -622,8 +658,9 @@ async function clearOutputs() {
 async function refresh() {
     await getSystemInfo();
     await getStatus();
-    await getCycleCount();
-    await getLogs();
+    await safeGetCycleCount();
+    await safeGetLogs();
+    await getPulseData();
     await refreshPlot();
     await refreshCycleLimitUI();
 }
@@ -690,7 +727,7 @@ async function setPeriod() {
 
         Actual Period:
         ${(quantizedSeconds * 1e6).toFixed(3)}
-        µs<br>
+        µs
 
         Clock Ticks:
         ${ticks.toLocaleString()}
@@ -852,14 +889,14 @@ async function setPulse() {
     info.innerHTML = `
         FPGA Quantization:<br>
         Start: ${(quantizedStart * 1e6).toFixed(3)} µs
-        (${start} ticks)<br>
+        (${start} ticks)
 
         Stop: ${(quantizedStop * 1e6).toFixed(3)} µs
-        (${stop} ticks)<br>
+        (${stop} ticks)
 
         Width:
-        ${((quantizedStop - quantizedStart) * 1e6).toFixed(3)}
-        µs
+        ${((quantizedStop - quantizedStart) * 1e6).toFixed(3)} µs
+        (${stop - start} ticks)
     `;
 
     // ---------------------------------

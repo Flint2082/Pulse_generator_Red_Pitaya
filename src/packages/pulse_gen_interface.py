@@ -50,8 +50,8 @@ class PulseGenInterface:
         print("INFO: Stopping pulse generator")
     
     def get_status(self):
-        self.fpga.read_register("counter_en")
-        status = "running" if self.fpga.read_register("counter_en") == 1 else "stopped"
+        self.fpga.read_register("is_running")
+        status = "running" if self.fpga.read_register("is_running") == 1 else "stopped"
         print(f"INFO: Pulse generator is currently {status}")
         return status
     
