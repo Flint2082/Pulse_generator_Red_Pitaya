@@ -7,7 +7,7 @@ import struct
 BASE_ADDR = 0x40000000 # TODO: make this automatically determined based on the .fpg file
 PAGE_SIZE = mmap.PAGESIZE
 MAP_SIZE = PAGE_SIZE
-BITSTREAM_PATH = os.path.join("../../bitstream", "top.bit.bin")
+BITSTREAM_PATH = os.path.join("..", "bitstream", "top.bit.bin")
 
 class FPGAInterface:
     def __init__(self, base_addr=BASE_ADDR, map_size=MAP_SIZE, bitstream_path=BITSTREAM_PATH):
@@ -28,6 +28,7 @@ class FPGAInterface:
             result = subprocess.run(
                 ["/opt/redpitaya/bin/fpgautil", "-b", self.BITSTREAM_PATH],
                 capture_output=True,
+                check=True,
                 text=True,
                 timeout=10
             )
