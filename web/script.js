@@ -3,7 +3,7 @@ const API_BASE = (
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
 )
-    ? 'http://rp-f0f587.local:8000/api'
+    ? 'http://rp-f0f1b4.local:8000/api' // to match RP adress for local hosting
     : '/api';
 
 async function apiFetch(path, options = {}) {
