@@ -1,6 +1,7 @@
 from packages.fpga_interface import FPGAInterface
 import os
 import csv
+import re
 
 class PulseGenInterface:
     def __init__(self):
@@ -11,8 +12,7 @@ class PulseGenInterface:
             key=os.path.getmtime
         )
  
-        # Constants
-        self.MAX_PULSES_PER_OUTPUT = 32
+        # Constants (MAX_PULSES_PER_OUTPUT is read from the register map below)
         self.NUM_OUTPUTS = 3
         
         self.BITSTREAM_PATH = os.path.join(base_dir, "root", "top.bit.bin")
@@ -22,12 +22,24 @@ class PulseGenInterface:
         try:
             self.fpga = FPGAInterface()
             self.fpga.load_register_map(self.fpg_file)
+            self.MAX_PULSES_PER_OUTPUT = self.count_pulse_registers()
             self.fpga_clock_freq_Hz = self.fpga.get_clock_freq(self.fpg_file)
             self.fpga.test_fpga_interface("counter_en")
         except Exception as e:
             print(f"INFO: Failed to upload FPGA program: {e}")
             raise
         
+    # Number of start/stop register pairs per output in the loaded design
+    # (set in Simulink by model_composer/build_pulse_generator.m)
+    def count_pulse_registers(self):
+        counts = []
+        for output_idx in range(1, self.NUM_OUTPUTS + 1):
+            starts = [name for name in self.fpga.register_map if re.fullmatch(rf"out_{output_idx}_start_\d+", name)]
+            counts.append(len(starts))
+        if min(counts) == 0:
+            raise ValueError("No pulse registers (out_<k>_start_<p>) found in register map")
+        return min(counts)
+
     def load_bitstream(self):
         result = self.fpga.load_bitstream()
         if result["status"] == "error":
